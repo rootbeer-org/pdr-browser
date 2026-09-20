@@ -7,6 +7,14 @@ export function hex(value: string, length: number): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(value.match(/../g)!, (byte) => parseInt(byte, 16));
 }
 
+export function webUrl(value: string): string {
+  const url = new URL(value);
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new Error("The catalog contains a link that is not a web address.");
+  }
+  return url.href;
+}
+
 export async function bytes(url: string, limit: number): Promise<Uint8Array<ArrayBuffer>> {
   const parsedUrl = new URL(url);
   if (!parsedUrl.protocol.startsWith("http")) {

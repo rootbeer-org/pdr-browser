@@ -1,6 +1,13 @@
 import { Show } from "solid-js";
 import { platforms } from "../catalog/types.ts";
-import { clearFilters, order, platform, query, sort } from "../state/browser-state.ts";
+import {
+  clearFilters,
+  order,
+  platform,
+  query,
+  sort,
+  type SortOrder,
+} from "../state/browser-state.ts";
 import { catalog, error, results } from "../state/catalog-resource.ts";
 
 export default function ResultsToolbar() {
@@ -33,10 +40,13 @@ export default function ResultsToolbar() {
           aria-label="Sort packages"
           class="field"
           value={sort()}
-          onChange={(event) => order(event.currentTarget.value === "name" ? "name" : "relevance")}
+          onChange={(event) => order(event.currentTarget.value as SortOrder)}
         >
-          <option value="relevance">Relevance</option>
+          <Show when={query()}>
+            <option value="relevance">Relevance</option>
+          </Show>
           <option value="name">Name A–Z</option>
+          <option value="name-desc">Name Z–A</option>
         </select>
       </label>
     </div>

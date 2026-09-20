@@ -21,7 +21,8 @@ export function sourceHref(recipe: CatalogRecipe | undefined): string {
   const url = recipe?.build?.url;
   if (!url) return "";
   try {
-    return new URL(url).protocol === "https:" ? url : "";
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? url : "";
   } catch {
     return "";
   }

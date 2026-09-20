@@ -13,7 +13,9 @@ export const { catalog, packages, results, platformCounts, queryCount, error, re
 
     const results = createMemo(() => {
       const matched = searchPackages(packages(), query(), platform());
-      return sort() === "name" ? matched.sort((a, b) => a.name.localeCompare(b.name)) : matched;
+      if (sort() === "name") return matched.sort((a, b) => a.name.localeCompare(b.name));
+      if (sort() === "name-desc") return matched.sort((a, b) => b.name.localeCompare(a.name));
+      return matched;
     });
 
     const platformCounts = createMemo(() =>

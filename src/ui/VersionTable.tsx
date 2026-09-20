@@ -9,21 +9,24 @@ export default function VersionTable(props: { view: PackageView }) {
   const view = props.view;
 
   const systemLabel = () => platforms.find(({ id }) => id === platform())?.short ?? "";
+  /** Every version of a package publishes the same platforms, so state it once. */
+  const coverage = () =>
+    platform()
+      ? systemLabel()
+      : platforms
+          .filter(({ id }) => view.pkg.versions[view.selectedVersion()].systems.includes(id))
+          .map(({ short }) => short)
+          .join(" · ");
+
   const hasPlatformDefaults = () =>
     !platform() && Object.keys(view.pkg.default_versions ?? {}).length > 0;
-
-  const supportedOn = (entry: string) =>
-    platforms
-      .filter((candidate) => view.pkg.versions[entry].systems.includes(candidate.id))
-      .map((candidate) => candidate.short)
-      .join(" · ");
 
   return (
     <section class="mt-6" aria-label={`${view.pkg.name} versions`}>
       <h3 class="heading">
         <span>Available versions</span>
         <span class="ml-auto normal-case tabular-nums opacity-50">
-          {view.versions().length} · newest first{platform() ? ` · ${systemLabel()}` : ""}
+          {view.versions().length} · newest first · {coverage()}
         </span>
       </h3>
 
@@ -32,7 +35,6 @@ export default function VersionTable(props: { view: PackageView }) {
           <thead class="sticky top-0 bg-page uppercase">
             <tr class="border-b border-edge">
               <th class="border-r border-edge px-2 py-1 text-left font-bold">Version</th>
-              <th class="border-r border-edge px-2 py-1 text-left font-bold">Available on</th>
               <th class="px-2 py-1 text-right font-bold">
                 <span class="sr-only">Select version</span>
               </th>
@@ -59,7 +61,6 @@ export default function VersionTable(props: { view: PackageView }) {
                       </span>
                     </Show>
                   </th>
-                  <td class="border-r border-edge px-2 py-1 opacity-80">{supportedOn(entry)}</td>
                   <td class="px-2 py-1 text-right whitespace-nowrap">
                     <button
                       type="button"

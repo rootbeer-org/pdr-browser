@@ -1,4 +1,4 @@
-import { hex } from "./transport.ts";
+import { hex, webUrl } from "./transport.ts";
 import {
   platforms,
   type CatalogPackage,
@@ -17,6 +17,7 @@ export function validateManifest(manifest: any): CatalogPackage[] {
   const packages = Object.values(manifest.catalog.packages) as CatalogPackage[];
   for (const pkg of packages) {
     validatePackage(pkg);
+    pkg.homepage = webUrl(pkg.homepage);
     for (const recipe of Object.values(pkg.versions)) validateRecipe(recipe);
   }
 
@@ -52,6 +53,7 @@ function validateRecord(
       throw new Error("The catalog publishes a record for an unapproved platform.");
     }
 
+    webUrl(pin.url);
     hex(pin.sha256, 32);
   }
 }

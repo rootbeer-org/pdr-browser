@@ -20,6 +20,7 @@ export interface CatalogRecipe {
   revision: number;
   source?: string;
   build?: {
+    backend?: string;
     url: string;
     libraries?: string[];
     dependencies?: (string | { package: string; kind: DependencyKind })[];
@@ -27,6 +28,16 @@ export interface CatalogRecipe {
 }
 
 export type DependencyKind = "all" | "build" | "link" | "runtime" | "link_runtime";
+export interface PackageRecord {
+  system: string;
+  revision: number;
+  source: string;
+  receiptSha256: string;
+  receiptUrl?: string;
+  approvalSequence?: number;
+  approvalUrl?: string;
+}
+
 export interface RecordPin {
   url: string;
   sha256: string;

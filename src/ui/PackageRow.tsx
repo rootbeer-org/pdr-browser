@@ -3,6 +3,7 @@ import { cn } from "cn";
 import { platforms, type CatalogPackage } from "../catalog/types.ts";
 import { availableVersions, preferredVersion } from "../catalog/versions.ts";
 import { expanded, platform, toggleExpanded } from "../state/browser-state.ts";
+import { sourceHref } from "../state/links.ts";
 import PackageDetails from "./PackageDetails.tsx";
 
 export default function PackageRow(props: { pkg: CatalogPackage }) {
@@ -18,6 +19,8 @@ export default function PackageRow(props: { pkg: CatalogPackage }) {
       : `${available.map(({ short }) => short).join(" · ")} only`;
   };
 
+  const source = () => sourceHref(props.pkg.versions[version()]);
+
   return (
     <article class={cn("border-b border-edge last:border-b-0", isExpanded() && "bg-inset")}>
       <h2>
@@ -25,7 +28,7 @@ export default function PackageRow(props: { pkg: CatalogPackage }) {
           type="button"
           aria-expanded={isExpanded()}
           aria-controls={`details-${props.pkg.name}`}
-          class="flex w-full flex-wrap items-baseline gap-x-2 px-3 pt-3 pb-0.5 text-left hover:bg-hover"
+          class="flex w-full flex-wrap items-baseline gap-x-2 px-3 pt-3 pb-0.5 text-left hover:bg-hover focus-visible:-outline-offset-2"
           onClick={() => toggleExpanded(props.pkg.name)}
         >
           <span aria-hidden="true" class="opacity-50">
@@ -42,8 +45,18 @@ export default function PackageRow(props: { pkg: CatalogPackage }) {
           <For each={bins()}>{(bin) => <code class="ml-2">{bin}</code>}</For>
         </span>
         <Show when={limitedTo()}>
-          <span class="ml-auto">{limitedTo()}</span>
+          <span>{limitedTo()}</span>
         </Show>
+        <span class="ml-auto flex flex-wrap gap-x-3">
+          <a class="link" href={props.pkg.homepage} target="_blank" rel="noopener noreferrer">
+            Homepage ↗
+          </a>
+          <Show when={source()}>
+            <a class="link" href={source()} target="_blank" rel="noopener noreferrer">
+              Source ↗
+            </a>
+          </Show>
+        </span>
       </div>
       <div id={`details-${props.pkg.name}`} hidden={!isExpanded()}>
         <Show when={isExpanded()}>

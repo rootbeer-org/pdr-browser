@@ -1,7 +1,7 @@
 import { createSignal, onCleanup, onMount } from "solid-js";
 import { platforms } from "../catalog/types.ts";
 
-export type SortOrder = "relevance" | "name";
+export type SortOrder = "relevance" | "name" | "name-desc";
 const [params, setParams] = createSignal(new URLSearchParams());
 const read = (key: string) => params().get(key) ?? "";
 
@@ -19,7 +19,12 @@ function patch(changes: Record<string, string>): void {
 export const query = () => read("q");
 export const expanded = () => read("show");
 export const version = () => (expanded() ? read("version") : "");
-export const sort = (): SortOrder => (read("sort") === "name" ? "name" : "relevance");
+export const sort = (): SortOrder => {
+  const value = read("sort");
+  if (value === "name" || value === "name-desc") return value;
+  return query() ? "relevance" : "name";
+};
+
 export const platform = () =>
   platforms.some(({ id }) => id === read("platform")) ? read("platform") : "";
 
@@ -27,7 +32,7 @@ export const search = (value: string) => patch({ q: value, show: "", version: ""
 export const filterPlatform = (value: string) => patch({ platform: value, show: "", version: "" });
 export const clearFilters = () => patch({ q: "", platform: "", show: "", version: "" });
 
-export const order = (value: SortOrder) => patch({ sort: value === "name" ? "name" : "" });
+export const order = (value: SortOrder) => patch({ sort: value === "relevance" ? "" : value });
 export const selectVersion = (value: string) => patch({ version: value });
 export const toggleExpanded = (name: string) =>
   patch({ show: expanded() === name ? "" : name, version: "" });
