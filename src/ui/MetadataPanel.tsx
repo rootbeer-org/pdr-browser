@@ -31,82 +31,98 @@ export default function MetadataPanel(props: { view: PackageView }) {
   };
 
   return (
-    <section aria-label={`${view.pkg.name} package details`}>
-      <h3>
-        {view.isLibrary() ? "Libraries provided" : "Commands provided"}{" "}
-        <span>{view.selectedVersion()}</span>
-      </h3>
+    <section class="flex flex-col gap-y-4" aria-label={`${view.pkg.name} package details`}>
       <div>
-        <For each={view.recipe().bins}>
-          {(name) => (
-            <button
-              type="button"
-              title={`Show how to run ${name}`}
-              onClick={() => view.chooseCommand(name)}
-            >
-              <code>{name}</code>
-            </button>
-          )}
-        </For>
+        <h3 class="heading">
+          <span>{view.isLibrary() ? "Libraries provided" : "Commands provided"}</span>
+          <span class="ml-auto opacity-50">{view.selectedVersion()}</span>
+        </h3>
+        <div class="flex flex-wrap gap-2">
+          <For each={view.recipe().bins}>
+            {(name) => (
+              <button
+                type="button"
+                title={`Show how to run ${name}`}
+                class="border border-edge px-2 py-0.5 hover:bg-hover"
+                onClick={() => view.chooseCommand(name)}
+              >
+                <code>{name}</code>
+              </button>
+            )}
+          </For>
+        </div>
       </div>
 
       <Show when={view.recipe().build?.libraries?.length}>
-        <Show when={!view.isLibrary()}>
-          <h3>Libraries provided</h3>
-        </Show>
-        <p>
-          <For each={view.recipe().build!.libraries}>{(library) => <code>{library}</code>}</For>
-        </p>
+        <div>
+          <Show when={!view.isLibrary()}>
+            <h3 class="heading">Libraries provided</h3>
+          </Show>
+          <p class="flex flex-wrap gap-x-3 opacity-80">
+            <For each={view.recipe().build!.libraries}>{(library) => <code>{library}</code>}</For>
+          </p>
+        </div>
       </Show>
 
       <Show when={view.pkg.aliases.length}>
-        <p>
-          Package aliases: <For each={view.pkg.aliases}>{(alias) => <code>{alias}</code>}</For>
+        <p class="opacity-80">
+          Aliases:
+          <For each={view.pkg.aliases}>{(alias) => <code class="ml-2">{alias}</code>}</For>
         </p>
       </Show>
 
       <Show when={Object.keys(view.recipe().apps ?? {}).length}>
-        <h3>Apps provided</h3>
-        <p>
-          <For each={Object.keys(view.recipe().apps!)}>{(name) => <code>{name}</code>}</For>
-        </p>
+        <div>
+          <h3 class="heading">Apps provided</h3>
+          <p class="flex flex-wrap gap-x-3 opacity-80">
+            <For each={Object.keys(view.recipe().apps!)}>{(name) => <code>{name}</code>}</For>
+          </p>
+        </div>
       </Show>
 
-      <h3>Dependencies</h3>
-      <For each={dependencyGroups()}>
-        {(group) => (
-          <div>
-            <p>{group.description}</p>
-            <ul>
-              <For each={group.entries}>
-                {(dependency) => (
-                  <li>
-                    <a href={packageHref(dependency.name, dependency.version, platform())}>
-                      <code>{dependency.request}</code>
-                    </a>
-                  </li>
-                )}
-              </For>
-            </ul>
-          </div>
-        )}
-      </For>
-      <Show when={!dependencies().length}>
-        <p>No package dependencies declared.</p>
-      </Show>
-
-      <h3>Platform defaults</h3>
-      <p>The version installed on each platform unless you choose a specific version.</p>
-      <dl>
-        <For each={platforms}>
-          {(entry) => (
-            <div>
-              <dt>{entry.label}</dt>
-              <dd>{platformDefault(entry.id)}</dd>
+      <div>
+        <h3 class="heading">Dependencies</h3>
+        <For each={dependencyGroups()}>
+          {(group) => (
+            <div class="mb-2">
+              <p class="opacity-50">{group.description}</p>
+              <ul class="mt-1 flex flex-col gap-y-1">
+                <For each={group.entries}>
+                  {(dependency) => (
+                    <li>
+                      <a
+                        class="text-accent hover:underline"
+                        href={packageHref(dependency.name, dependency.version, platform())}
+                      >
+                        <code>{dependency.request}</code>
+                      </a>
+                    </li>
+                  )}
+                </For>
+              </ul>
             </div>
           )}
         </For>
-      </dl>
+        <Show when={!dependencies().length}>
+          <p class="opacity-50">No package dependencies declared.</p>
+        </Show>
+      </div>
+
+      <div>
+        <h3 class="heading">Platform defaults</h3>
+        <dl class="border border-edge">
+          <For each={platforms}>
+            {(entry) => (
+              <div class="flex items-baseline justify-between gap-x-4 border-b border-edge px-2 py-1 last:border-b-0">
+                <dt class={entry.id === platform() ? "font-bold text-accent" : "opacity-80"}>
+                  {entry.label}
+                </dt>
+                <dd class="tabular-nums">{platformDefault(entry.id)}</dd>
+              </div>
+            )}
+          </For>
+        </dl>
+      </div>
     </section>
   );
 }

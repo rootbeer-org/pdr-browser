@@ -15,24 +15,28 @@ export default function PackageDetails(props: { pkg: CatalogPackage }) {
   const source = () => sourceHref(view.recipe());
 
   return (
-    <div>
-      <nav aria-label={`${view.pkg.name} links`}>
-        <a href={view.pkg.homepage} target="_blank" rel="noopener noreferrer">
+    <div class="border-t border-edge px-3 py-3">
+      <nav class="flex flex-wrap gap-x-4 gap-y-1" aria-label={`${view.pkg.name} links`}>
+        <a class="link" href={view.pkg.homepage} target="_blank" rel="noopener noreferrer">
           Homepage ↗
         </a>
-        <a href={recipeHref(view.pkg.name)} target="_blank" rel="noopener noreferrer">
+        <a class="link" href={recipeHref(view.pkg.name)} target="_blank" rel="noopener noreferrer">
           Package recipe ↗
         </a>
         <Show when={source()}>
-          <a href={source()} target="_blank" rel="noopener noreferrer">
+          <a class="link" href={source()} target="_blank" rel="noopener noreferrer">
             {view.recipe().build ? "Source archive" : "Upstream release"} ↗
           </a>
         </Show>
-        <a href={permalink()}>Link to this package</a>
+        <a class="link" href={permalink()}>
+          Link to this package
+        </a>
       </nav>
 
-      <UsagePanel view={view} />
-      <MetadataPanel view={view} />
+      <div class="mt-4 grid gap-x-8 gap-y-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <UsagePanel view={view} />
+        <MetadataPanel view={view} />
+      </div>
 
       <Show when={view.versions().length > 1}>
         <VersionTable view={view} />

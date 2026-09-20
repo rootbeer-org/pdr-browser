@@ -5,6 +5,7 @@ export const catalogSource: CatalogSource = {
   publicKey: import.meta.env.VITE_CATALOG_PUBLIC_KEY,
 };
 
+export const catalogHost = new URL(catalogSource.url).hostname;
 export const indexRepositoryUrl = "https://github.com/tale/rootbeer-index";
 const docsEndpoint = "https://rbpkg.com";
 

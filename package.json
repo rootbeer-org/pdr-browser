@@ -13,7 +13,11 @@
     "prepare": "lefthook install"
   },
   "dependencies": {
-    "solid-js": "^1.9.15"
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "cn": "^0.3.0",
+    "solid-js": "^1.9.15",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

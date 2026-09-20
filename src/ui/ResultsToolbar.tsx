@@ -4,7 +4,7 @@ import { clearFilters, order, platform, query, sort } from "../state/browser-sta
 import { catalog, error, results } from "../state/catalog-resource.ts";
 
 export default function ResultsToolbar() {
-  const platformLabel = () => platforms.find(({ id }) => id === platform())?.label ?? "";
+  const platformLabel = () => platforms.find(({ id }) => id === platform())?.short ?? "";
 
   const status = () => {
     if (catalog.loading) return "Loading packages…";
@@ -13,40 +13,32 @@ export default function ResultsToolbar() {
   };
 
   return (
-    <>
-      <div>
-        <p role="status" aria-live="polite">
-          {status()}
-          <Show when={!catalog.loading && !error() && platform()}>
-            <span> · {platformLabel()}</span>
-          </Show>
-        </p>
-        <label>
-          Sort
-          <select
-            aria-label="Sort packages"
-            value={sort()}
-            onChange={(event) => order(event.currentTarget.value === "name" ? "name" : "relevance")}
-          >
-            <option value="relevance">Relevance</option>
-            <option value="name">Name A–Z</option>
-          </select>
-        </label>
-      </div>
+    <div class="my-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+      <p role="status" aria-live="polite" class="tabular-nums">
+        {status()}
+        <Show when={!catalog.loading && !error() && platform()}>
+          <span class="opacity-50"> · {platformLabel()}</span>
+        </Show>
+      </p>
 
       <Show when={query() || platform()}>
-        <div>
-          <Show when={query()}>
-            <span>“{query()}”</span>
-          </Show>
-          <Show when={platform()}>
-            <span>{platformLabel()}</span>
-          </Show>
-          <button type="button" onClick={clearFilters}>
-            Clear filters
-          </button>
-        </div>
+        <button type="button" class="link" onClick={clearFilters}>
+          Clear filters
+        </button>
       </Show>
-    </>
+
+      <label class="ml-auto flex items-baseline gap-x-2 opacity-80">
+        Sort
+        <select
+          aria-label="Sort packages"
+          class="field"
+          value={sort()}
+          onChange={(event) => order(event.currentTarget.value === "name" ? "name" : "relevance")}
+        >
+          <option value="relevance">Relevance</option>
+          <option value="name">Name A–Z</option>
+        </select>
+      </label>
+    </div>
   );
 }

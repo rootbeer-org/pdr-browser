@@ -1,0 +1,77 @@
+@import "tailwindcss";
+@import "@fontsource/jetbrains-mono/latin-400.css";
+@import "@fontsource/jetbrains-mono/latin-700.css";
+
+@theme {
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-page: var(--color-neutral-200);
+  --color-panel: var(--color-neutral-50);
+  --color-inset: var(--color-neutral-100);
+  --color-edge: var(--color-neutral-300);
+  --color-ink: var(--color-neutral-900);
+  --color-accent: #b34f1d;
+  --color-accent-soft: --alpha(#c05621 / 10%);
+  --color-hover: --alpha(var(--color-neutral-400) / 25%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-page: var(--color-black);
+    --color-panel: var(--color-neutral-950);
+    --color-inset: var(--color-neutral-900);
+    --color-edge: var(--color-neutral-700);
+    --color-ink: var(--color-neutral-50);
+    --color-accent: #e8935a;
+    --color-accent-soft: --alpha(#e8935a / 14%);
+    --color-hover: --alpha(var(--color-neutral-700) / 40%);
+  }
+}
+
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    @apply bg-page text-ink flex min-h-dvh flex-col font-mono text-sm/snug antialiased overscroll-none;
+  }
+
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-edge);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-edge) transparent;
+  }
+}
+
+@utility field {
+  @apply appearance-none border border-edge bg-page py-1 pr-6 pl-2;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentcolor 50%),
+    linear-gradient(135deg, currentcolor 50%, transparent 50%);
+  background-position:
+    right 0.75rem center,
+    right 0.5rem center;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+
+@utility link {
+  @apply underline decoration-edge underline-offset-4 hover:text-accent hover:decoration-accent;
+}
+
+@utility heading {
+  @apply mb-2 flex items-baseline gap-x-2 font-bold uppercase;
+}

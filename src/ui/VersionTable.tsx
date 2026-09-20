@@ -1,4 +1,5 @@
 import { For, Show } from "solid-js";
+import { cn } from "cn";
 import { platforms } from "../catalog/types.ts";
 import { defaultVersion } from "../catalog/versions.ts";
 import { platform, selectVersion, version } from "../state/browser-state.ts";
@@ -7,62 +8,79 @@ import type { PackageView } from "../state/package-view.ts";
 export default function VersionTable(props: { view: PackageView }) {
   const view = props.view;
 
-  const systemLabel = () => platforms.find(({ id }) => id === platform())?.label ?? "";
+  const systemLabel = () => platforms.find(({ id }) => id === platform())?.short ?? "";
   const hasPlatformDefaults = () =>
     !platform() && Object.keys(view.pkg.default_versions ?? {}).length > 0;
 
   const supportedOn = (entry: string) =>
     platforms
-      .filter((platform) => view.pkg.versions[entry].systems.includes(platform.id))
-      .map((platform) => platform.short)
+      .filter((candidate) => view.pkg.versions[entry].systems.includes(candidate.id))
+      .map((candidate) => candidate.short)
       .join(" · ");
 
   return (
-    <section aria-label={`${view.pkg.name} versions`}>
-      <h3>
-        Available versions{" "}
-        <span>
-          {view.versions().length} · newest first
-          {platform() ? ` · ${systemLabel()}` : ""}
+    <section class="mt-6" aria-label={`${view.pkg.name} versions`}>
+      <h3 class="heading">
+        <span>Available versions</span>
+        <span class="ml-auto normal-case tabular-nums opacity-50">
+          {view.versions().length} · newest first{platform() ? ` · ${systemLabel()}` : ""}
         </span>
       </h3>
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Version</th>
-            <th scope="col">Available on</th>
-            <th scope="col">
-              <span>Select version</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <For each={view.versions()}>
-            {(entry) => (
-              <tr aria-current={view.selectedVersion() === entry ? "true" : undefined}>
-                <th scope="row">
-                  <code>{entry}</code>
-                  <Show when={entry === defaultVersion(view.pkg, platform())}>
-                    <span>Default{hasPlatformDefaults() ? "*" : ""}</span>
-                  </Show>
-                </th>
-                <td>{supportedOn(entry)}</td>
-                <td>
-                  <button
-                    type="button"
-                    aria-label={`Use ${view.pkg.name} version ${entry}`}
-                    onClick={() => selectVersion(entry)}
+
+      <div class="max-h-72 overflow-auto border border-edge">
+        <table class="w-full border-collapse">
+          <thead class="sticky top-0 bg-page uppercase">
+            <tr class="border-b border-edge">
+              <th class="border-r border-edge px-2 py-1 text-left font-bold">Version</th>
+              <th class="border-r border-edge px-2 py-1 text-left font-bold">Available on</th>
+              <th class="px-2 py-1 text-right font-bold">
+                <span class="sr-only">Select version</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <For each={view.versions()}>
+              {(entry) => (
+                <tr
+                  aria-current={view.selectedVersion() === entry ? "true" : undefined}
+                  class={cn(
+                    "border-b border-edge last:border-b-0 hover:bg-hover",
+                    view.selectedVersion() === entry && "bg-inset",
+                  )}
+                >
+                  <th
+                    scope="row"
+                    class="border-r border-edge px-2 py-1 text-left font-normal whitespace-nowrap"
                   >
-                    {version() === entry ? "Selected" : "Use version"}
-                  </button>
-                </td>
-              </tr>
-            )}
-          </For>
-        </tbody>
-      </table>
+                    <code>{entry}</code>
+                    <Show when={entry === defaultVersion(view.pkg, platform())}>
+                      <span class="ml-2 border border-accent bg-accent-soft px-1 text-accent">
+                        Default{hasPlatformDefaults() ? "*" : ""}
+                      </span>
+                    </Show>
+                  </th>
+                  <td class="border-r border-edge px-2 py-1 opacity-80">{supportedOn(entry)}</td>
+                  <td class="px-2 py-1 text-right whitespace-nowrap">
+                    <button
+                      type="button"
+                      aria-label={`Use ${view.pkg.name} version ${entry}`}
+                      class="text-accent hover:underline"
+                      onClick={() => selectVersion(entry)}
+                    >
+                      {version() === entry ? "Selected" : "Use version"}
+                    </button>
+                  </td>
+                </tr>
+              )}
+            </For>
+          </tbody>
+        </table>
+      </div>
+
       <Show when={hasPlatformDefaults()}>
-        <p>* Some platforms use a different default; see the platform list above.</p>
+        <p class="mt-2 opacity-50">
+          * Some platforms use a different default; see the platform list above.
+        </p>
       </Show>
     </section>
   );
