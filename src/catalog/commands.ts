@@ -3,6 +3,7 @@ import type { CatalogPackage, CatalogRecipe, DependencyKind } from "./types.ts";
 export type UsageMode = "run" | "use" | "config";
 export type DetailMode = UsageMode | "bootstrap";
 
+export type PackageKind = "command" | "library" | "app";
 export interface SnippetRequest {
   mode: DetailMode;
   version: string;
@@ -28,17 +29,24 @@ const DEPENDENCY_LABELS: Record<DependencyKind, string> = {
   link_runtime: "Link / runtime",
 };
 
+export function packageKind(recipe: CatalogRecipe): PackageKind {
+  if (recipe.bins.length) return "command";
+  if (recipe.build?.libraries?.length) return "library";
+  return "app";
+}
+
 export function primaryCommand(pkg: CatalogPackage, version: string): string {
   const bins = pkg.versions[version]?.bins ?? [];
   return bins.includes(pkg.name) ? pkg.name : bins.length === 1 ? bins[0] : "";
 }
 
-export function usageModes(pkg: CatalogPackage): [DetailMode, string][] {
+export function usageModes(pkg: CatalogPackage, recipe: CatalogRecipe): [DetailMode, string][] {
   const isRootbeer = pkg.name === "rootbeer";
   return [
     ...(isRootbeer ? ([["bootstrap", "Install Rootbeer"]] as [DetailMode, string][]) : []),
     ["use", isRootbeer ? "Install with rb" : "Install"],
-    ["run", "Run once"],
+    // An app bundle has no command to run once.
+    ...(recipe.bins.length ? ([["run", "Run once"]] as [DetailMode, string][]) : []),
     ["config", "Lua config"],
   ];
 }
@@ -67,7 +75,9 @@ export function usageSnippet(
   request: SnippetRequest,
 ): string {
   if (request.mode === "bootstrap") return BOOTSTRAP_SNIPPET;
-  if (!recipe.bins.length) return `dependencies = { "${pkg.name}@${request.version}" }`;
+  if (packageKind(recipe) === "library") {
+    return `dependencies = { "${pkg.name}@${request.version}" }`;
+  }
 
   const command = packageCommand(
     pkg,
@@ -75,7 +85,10 @@ export function usageSnippet(
     request.isPinned ? request.version : "",
     request.mode === "run" ? request.bin : "",
   );
-  return request.mode === "use" ? `${command}\neval "$(rb env)"` : command;
+
+  // The eval line puts commands on PATH; an app bundle has none.
+  const needsShell = request.mode === "use" && packageKind(recipe) === "command";
+  return needsShell ? `${command}\neval "$(rb env)"` : command;
 }
 
 export function packageDependencies(recipe: CatalogRecipe): PackageDependency[] {

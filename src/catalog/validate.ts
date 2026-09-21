@@ -4,6 +4,7 @@ import {
   type CatalogPackage,
   type CatalogRecipe,
   type PackageRecords,
+  type RecordPin,
 } from "./types.ts";
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9+._-]*$/;
@@ -38,7 +39,7 @@ export function validateManifest(manifest: any): CatalogPackage[] {
 
 function validateRecord(
   id: string,
-  systems: Record<string, { url: string; sha256: string }>,
+  systems: Record<string, RecordPin>,
   byName: Map<string, CatalogPackage>,
 ): void {
   const separator = id.lastIndexOf("@");
@@ -48,11 +49,7 @@ function validateRecord(
     throw new Error("The catalog contains an invalid package record.");
   }
 
-  for (const [system, pin] of Object.entries(systems)) {
-    if (!recipe.systems.includes(system)) {
-      throw new Error("The catalog publishes a record for an unapproved platform.");
-    }
-
+  for (const pin of Object.values(systems)) {
     webUrl(pin.url);
     hex(pin.sha256, 32);
   }
@@ -75,11 +72,14 @@ function validateRecipe(recipe: CatalogRecipe): void {
     throw new Error("The catalog contains invalid library exports.");
   }
 
+  // A recipe earns its place by shipping commands, libraries, or app bundles.
+  const outputs = recipe.bins.length + libraries.length + Object.keys(recipe.apps ?? {}).length;
+
   if (
     !Array.isArray(recipe.systems) ||
     !recipe.systems.every((system) => platforms.some(({ id }) => id === system)) ||
     !Array.isArray(recipe.bins) ||
-    (!recipe.bins.length && !libraries.length) ||
+    !outputs ||
     !recipe.bins.every((bin) => typeof bin === "string" && NAME_PATTERN.test(bin))
   ) {
     throw new Error("The catalog contains invalid package commands or platforms.");

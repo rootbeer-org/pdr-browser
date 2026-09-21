@@ -23,6 +23,7 @@ export default function UsagePanel(props: { view: PackageView }) {
   const guide = () => {
     if (view.mode() === "bootstrap") return [docs.gettingStarted, "Installation guide"];
     if (view.isLibrary()) return [docs.libraryDependencies, "Building with dependencies"];
+    if (view.isApp()) return [docs.packages, "Installing applications"];
     return [docs.packages, "Usage and updates"];
   };
 
@@ -35,7 +36,7 @@ export default function UsagePanel(props: { view: PackageView }) {
         <fieldset>
           <legend class="sr-only">Use this package</legend>
           <div class="flex flex-wrap">
-            <For each={usageModes(view.pkg)}>
+            <For each={usageModes(view.pkg, view.recipe())}>
               {([id, label]) => (
                 <label
                   class={cn(
@@ -117,6 +118,12 @@ export default function UsagePanel(props: { view: PackageView }) {
           <p class="opacity-80">
             Run <code>{view.bin()}</code> without adding it to your shell. Append <code>--</code>{" "}
             followed by any arguments for the command.
+          </p>
+        </Match>
+        <Match when={view.isApp()}>
+          <p class="opacity-80">
+            Install the <code>{Object.keys(view.recipe().apps ?? {})[0]}</code> bundle for your
+            user. Rootbeer links it into your Applications folder.
           </p>
         </Match>
         <Match when={view.mode() === "use"}>

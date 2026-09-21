@@ -1,6 +1,7 @@
 import { For, Show } from "solid-js";
 import { cn } from "cn";
 import { platforms, type CatalogPackage } from "../catalog/types.ts";
+import { packageKind } from "../catalog/commands.ts";
 import { availableVersions, preferredVersion } from "../catalog/versions.ts";
 import { expanded, platform, toggleExpanded } from "../state/browser-state.ts";
 import { sourceHref } from "../state/links.ts";
@@ -8,7 +9,15 @@ import PackageDetails from "./PackageDetails.tsx";
 
 export default function PackageRow(props: { pkg: CatalogPackage }) {
   const version = () => preferredVersion(props.pkg, platform());
-  const bins = () => props.pkg.versions[version()]?.bins ?? [];
+  const recipe = () => props.pkg.versions[version()];
+  const outputs = () => {
+    const entry = recipe();
+    if (!entry) return { label: "", names: [] as string[] };
+    const kind = packageKind(entry);
+    if (kind === "command") return { label: "Commands", names: entry.bins };
+    if (kind === "app") return { label: "Apps", names: Object.keys(entry.apps ?? {}) };
+    return { label: "Libraries", names: entry.build?.libraries ?? [] };
+  };
   const isExpanded = () => expanded() === props.pkg.name;
 
   /** Nearly every package builds everywhere, so only the exceptions are worth a line. */
@@ -41,8 +50,8 @@ export default function PackageRow(props: { pkg: CatalogPackage }) {
       <p class="px-3 pl-8 opacity-80">{props.pkg.description}</p>
       <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1 px-3 pt-0.5 pb-3 pl-8 opacity-50">
         <span>
-          {bins().length ? "Commands" : "Library"}
-          <For each={bins()}>{(bin) => <code class="ml-2">{bin}</code>}</For>
+          {outputs().label}
+          <For each={outputs().names}>{(name) => <code class="ml-2">{name}</code>}</For>
         </span>
         <Show when={limitedTo()}>
           <span>{limitedTo()}</span>

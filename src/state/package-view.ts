@@ -1,5 +1,5 @@
 import { createEffect, createSignal, on } from "solid-js";
-import { primaryCommand, usageSnippet, type DetailMode } from "../catalog/commands.ts";
+import { packageKind, primaryCommand, usageSnippet, type DetailMode } from "../catalog/commands.ts";
 import type { CatalogPackage } from "../catalog/types.ts";
 import { availableVersions, defaultVersion, preferredVersion } from "../catalog/versions.ts";
 import { platform, version } from "./browser-state.ts";
@@ -17,7 +17,9 @@ export function createPackageView(pkg: CatalogPackage) {
     versions().includes(version()) ? version() : preferredVersion(pkg, platform());
   const recipe = () => pkg.versions[selectedVersion()];
 
-  const isLibrary = () => recipe().bins.length === 0;
+  const kind = () => packageKind(recipe());
+  const isLibrary = () => kind() === "library";
+  const isApp = () => kind() === "app";
   const isDefaultAvailable = () => versions().includes(defaultVersion(pkg, platform()));
   const isInvalidVersion = () => Boolean(version()) && !versions().includes(version());
   const isPinned = () => Boolean(version()) || !isDefaultAvailable();
@@ -33,7 +35,9 @@ export function createPackageView(pkg: CatalogPackage) {
     versions,
     selectedVersion,
     recipe,
+    kind,
     isLibrary,
+    isApp,
     isDefaultAvailable,
     isInvalidVersion,
     isPinned,
