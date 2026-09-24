@@ -1,5 +1,5 @@
 import { createMemo, createResource, createRoot } from "solid-js";
-import { loadCatalog } from "../catalog/load.ts";
+import { loadRoot } from "../catalog/load.ts";
 import { matchesPackage, searchPackages } from "../catalog/search.ts";
 import { platforms } from "../catalog/types.ts";
 import { catalogSource } from "../config.ts";
@@ -7,7 +7,7 @@ import { platform, query, sort } from "./browser-state.ts";
 
 export const { catalog, packages, results, platformCounts, queryCount, error, refetch } =
   createRoot(() => {
-    const [catalog, { refetch }] = createResource(() => loadCatalog(catalogSource));
+    const [catalog, { refetch }] = createResource(() => loadRoot(catalogSource));
 
     const packages = () => catalog()?.packages ?? [];
 
@@ -34,7 +34,7 @@ export const { catalog, packages, results, platformCounts, queryCount, error, re
     const error = () => {
       const cause = catalog.error;
       if (!cause) return "";
-      return cause instanceof Error ? cause.message : "The catalog could not be loaded.";
+      return cause instanceof Error ? cause.message : "The package repository could not be loaded.";
     };
 
     return { catalog, packages, results, platformCounts, queryCount, error, refetch };

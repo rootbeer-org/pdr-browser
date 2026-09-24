@@ -1,4 +1,4 @@
-import { catalogHost, docs, indexRepositoryUrl } from "./config.ts";
+import { catalogHost, docs, recipesUrl } from "./config.ts";
 import { catalog, packages } from "./state/catalog-resource.ts";
 import PackageBrowser from "./ui/PackageBrowser.tsx";
 
@@ -20,8 +20,8 @@ export default function App() {
             <a class="link" href={docs.home}>
               Docs
             </a>
-            <a class="link" href={indexRepositoryUrl} target="_blank" rel="noopener noreferrer">
-              Index
+            <a class="link" href={recipesUrl} target="_blank" rel="noopener noreferrer">
+              PDR
             </a>
           </nav>
         </header>

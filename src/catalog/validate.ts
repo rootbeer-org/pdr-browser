@@ -1,101 +1,136 @@
 import { hex, webUrl } from "./transport.ts";
 import {
   platforms,
-  type CatalogPackage,
   type CatalogRecipe,
-  type PackageRecords,
-  type RecordPin,
+  type DocumentVersion,
+  type PackageDocument,
+  type RootPackage,
+  type RootPlatform,
 } from "./types.ts";
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9+._-]*$/;
 const LIBRARY_PATTERN = /^(lib|lib64)\/.+\.a$/;
+const KINDS = ["command", "library", "app"];
 
-export function validateManifest(manifest: any): CatalogPackage[] {
-  if (manifest.catalog?.schema !== 1 || !manifest.catalog.packages || !manifest.records) {
+/**
+ * Entries are decoded one at a time: one this browser cannot read is dropped
+ * rather than costing the whole repository. The signature already covers it.
+ */
+export function validateRoot(root: any): RootPackage[] {
+  if (!isObject(root.packages)) {
     throw new Error("Package search is temporarily unavailable. Please try again later.");
   }
 
-  const packages = Object.values(manifest.catalog.packages) as CatalogPackage[];
-  for (const pkg of packages) {
-    validatePackage(pkg);
-    pkg.homepage = webUrl(pkg.homepage);
-    for (const recipe of Object.values(pkg.versions)) validateRecipe(recipe);
-  }
-
-  const records = manifest.records as PackageRecords;
-  const byName = new Map(packages.map((pkg) => [pkg.name, pkg]));
-  for (const [id, systems] of Object.entries(records)) {
-    validateRecord(id, systems, byName);
-  }
-
-  for (const pkg of packages) {
-    for (const [version, recipe] of Object.entries(pkg.versions)) {
-      const published = records[`${pkg.name}@${version}`] ?? {};
-      recipe.systems = recipe.systems.filter((system) => Object.hasOwn(published, system));
+  return Object.entries(root.packages).flatMap(([name, entry]) => {
+    try {
+      return [validatePackage(name, entry)];
+    } catch {
+      return [];
     }
-  }
-  return packages;
+  });
 }
 
-function validateRecord(
-  id: string,
-  systems: Record<string, RecordPin>,
-  byName: Map<string, CatalogPackage>,
-): void {
-  const separator = id.lastIndexOf("@");
-  const recipe = byName.get(id.slice(0, separator))?.versions[id.slice(separator + 1)];
-
-  if (separator < 0 || !recipe || !Object.keys(systems).length) {
-    throw new Error("The catalog contains an invalid package record.");
+export function validateDocument(document: any, expect: RootPackage): PackageDocument {
+  if (document?.name !== expect.name || !isObject(document.versions)) {
+    throw new Error("The package document does not match the package requested.");
   }
 
-  for (const pin of Object.values(systems)) {
-    webUrl(pin.url);
-    hex(pin.sha256, 32);
+  const versions: Record<string, DocumentVersion> = {};
+  for (const [version, entry] of Object.entries<any>(document.versions)) {
+    if (!isObject(entry?.platforms) || !Number.isSafeInteger(entry.revision)) continue;
+
+    const published = Object.entries<any>(entry.platforms).filter(
+      ([system, platform]) => isKnownSystem(system) && isValidPlatform(system, platform),
+    );
+    if (!published.length) continue;
+
+    versions[version] = { ...entry, platforms: Object.fromEntries(published) };
   }
+  return { name: document.name, versions };
 }
 
-function validatePackage(pkg: CatalogPackage): void {
+function validatePackage(name: string, entry: any): RootPackage {
+  const aliases = entry.aliases ?? [];
   if (
-    !NAME_PATTERN.test(pkg.name) ||
-    typeof pkg.description !== "string" ||
-    !Array.isArray(pkg.aliases) ||
-    !pkg.versions?.[pkg.default_version]
+    !NAME_PATTERN.test(name) ||
+    typeof entry.description !== "string" ||
+    !Array.isArray(aliases) ||
+    !aliases.every((alias) => typeof alias === "string") ||
+    !isObject(entry.platforms)
   ) {
-    throw new Error("The catalog contains an invalid package.");
+    throw new Error("The package repository contains an invalid package.");
+  }
+  hex(entry.document, 32);
+
+  const available = Object.entries<any>(entry.platforms).filter(
+    ([system, platform]) => isKnownSystem(system) && isValidRootPlatform(platform),
+  );
+
+  return {
+    name,
+    aliases,
+    description: entry.description,
+    homepage: webUrl(entry.homepage),
+    license: typeof entry.license === "string" ? entry.license : "",
+    added: Number(entry.added) || 0,
+    updated: Number(entry.updated) || 0,
+    platforms: Object.fromEntries(
+      available.map(([system, platform]) => [
+        system,
+        { version: platform.version, kind: platform.kind, commands: platform.commands ?? [] },
+      ]),
+    ),
+    document: entry.document,
+  };
+}
+
+function isValidRootPlatform(platform: any): platform is RootPlatform {
+  const commands = platform?.commands ?? [];
+  return (
+    typeof platform?.version === "string" &&
+    KINDS.includes(platform.kind) &&
+    Array.isArray(commands) &&
+    commands.every((command) => typeof command === "string" && NAME_PATTERN.test(command))
+  );
+}
+
+function isValidPlatform(system: string, platform: any): boolean {
+  if (!isObject(platform?.recipe) || !Number.isSafeInteger(platform.published)) return false;
+  try {
+    hex(platform.record, 32);
+    validateRecipe(system, platform.recipe);
+    return true;
+  } catch {
+    return false;
   }
 }
 
-function validateRecipe(recipe: CatalogRecipe): void {
+function validateRecipe(system: string, recipe: CatalogRecipe): void {
   const libraries = recipe.build?.libraries ?? [];
   if (!Array.isArray(libraries) || !libraries.every(isSafeLibraryPath)) {
-    throw new Error("The catalog contains invalid library exports.");
+    throw new Error("The package contains invalid library exports.");
   }
 
+  const bins = recipe.bins ?? [];
+  const names = Array.isArray(bins) ? bins : isObject(bins) ? Object.keys(bins) : [];
   // A recipe earns its place by shipping commands, libraries, or app bundles.
-  const outputs = recipe.bins.length + libraries.length + Object.keys(recipe.apps ?? {}).length;
+  const outputs = names.length + libraries.length + Object.keys(recipe.apps ?? {}).length;
 
   if (
-    !Array.isArray(recipe.systems) ||
-    !recipe.systems.every((system) => platforms.some(({ id }) => id === system)) ||
-    !Array.isArray(recipe.bins) ||
     !outputs ||
-    !recipe.bins.every((bin) => typeof bin === "string" && NAME_PATTERN.test(bin))
+    !names.every((bin) => typeof bin === "string" && NAME_PATTERN.test(bin)) ||
+    (!Array.isArray(bins) && !Object.values(bins).every(isContainedString))
   ) {
-    throw new Error("The catalog contains invalid package commands or platforms.");
+    throw new Error("The package contains invalid commands.");
   }
 
-  if (recipe.apps !== undefined) validateApps(recipe);
+  if (recipe.apps !== undefined) validateApps(system, recipe.apps);
 }
 
-function validateApps(recipe: CatalogRecipe): void {
-  const apps = recipe.apps!;
-  const isMacOnly = recipe.systems.every((system) => system.endsWith("-macos"));
+function validateApps(system: string, apps: unknown): void {
   if (
-    !apps ||
-    typeof apps !== "object" ||
-    Array.isArray(apps) ||
-    (Object.keys(apps).length > 0 && !isMacOnly) ||
+    !isObject(apps) ||
+    (Object.keys(apps).length > 0 && !system.endsWith("-macos")) ||
     !Object.entries(apps).every(
       ([name, path]) =>
         name.endsWith(".app") &&
@@ -103,23 +138,29 @@ function validateApps(recipe: CatalogRecipe): void {
         !/[/\\\0]/.test(name) &&
         typeof path === "string" &&
         path.endsWith(".app") &&
-        !path.includes("\0") &&
-        isContainedPath(path),
+        isContainedString(path),
     )
   ) {
-    throw new Error("The catalog contains invalid app exports.");
+    throw new Error("The package contains invalid app exports.");
   }
 }
 
-function isSafeLibraryPath(path: unknown): boolean {
-  return (
-    typeof path === "string" &&
-    LIBRARY_PATTERN.test(path) &&
-    !/[\\\0]/.test(path) &&
-    isContainedPath(path)
-  );
+function isKnownSystem(system: string): boolean {
+  return platforms.some(({ id }) => id === system);
 }
 
-function isContainedPath(path: string): boolean {
-  return path.split("/").every((part) => part && part !== "." && part !== "..");
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isSafeLibraryPath(path: unknown): boolean {
+  return typeof path === "string" && LIBRARY_PATTERN.test(path) && isContainedString(path);
+}
+
+function isContainedString(path: unknown): boolean {
+  return (
+    typeof path === "string" &&
+    !/[\\\0]/.test(path) &&
+    path.split("/").every((part) => part && part !== "." && part !== "..")
+  );
 }

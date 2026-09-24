@@ -1,33 +1,27 @@
-import { availableVersions } from "./versions.ts";
-import type { CatalogPackage } from "./types.ts";
+import type { RootPackage } from "./types.ts";
 
-export function matchesPackage(pkg: CatalogPackage, query: string, system: string): boolean {
-  const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  const versions = availableVersions(pkg, system);
-  const text = [
-    pkg.name,
-    ...pkg.aliases,
-    pkg.description,
-    ...versions.flatMap((version) => pkg.versions[version].bins),
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  if (!terms.every((term) => text.includes(term))) return false;
-  return versions.length > 0;
+/** Commands of each platform's default version, as the root publishes them. */
+export function packageCommands(pkg: RootPackage, system = ""): string[] {
+  const entries = system ? [pkg.platforms[system]] : Object.values(pkg.platforms);
+  return [...new Set(entries.flatMap((entry) => entry?.commands ?? []))];
 }
 
-export function searchPackages(
-  packages: CatalogPackage[],
-  query: string,
-  system = "",
-): CatalogPackage[] {
+export function matchesPackage(pkg: RootPackage, query: string, system: string): boolean {
+  if (system && !pkg.platforms[system]) return false;
+
+  const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const text = [pkg.name, ...pkg.aliases, pkg.description, ...packageCommands(pkg, system)]
+    .join(" ")
+    .toLowerCase();
+  return terms.every((term) => text.includes(term));
+}
+
+export function searchPackages(packages: RootPackage[], query: string, system = ""): RootPackage[] {
   const term = query.trim().toLowerCase();
-  const rank = (pkg: CatalogPackage) => {
+  const rank = (pkg: RootPackage) => {
     if (pkg.name === term) return 0;
     if (pkg.aliases.includes(term)) return 1;
-    if (availableVersions(pkg, system).some((version) => pkg.versions[version].bins.includes(term)))
-      return 2;
+    if (packageCommands(pkg, system).includes(term)) return 2;
     if (pkg.name.startsWith(term)) return 3;
     return 4;
   };

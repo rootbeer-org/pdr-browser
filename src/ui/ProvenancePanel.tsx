@@ -15,7 +15,7 @@ export default function ProvenancePanel(props: { view: PackageView }) {
   const [chosen, setChosen] = createSignal("");
 
   const region = () => `provenance-${view.pkg.name}`;
-  const published = () => view.recipe().systems;
+  const published = view.systems;
   const system = () => {
     const preferred = chosen() || platform();
     return published().includes(preferred) ? preferred : published()[0];
@@ -24,7 +24,12 @@ export default function ProvenancePanel(props: { view: PackageView }) {
 
   const [record] = createRecord(() =>
     open() && system()
-      ? { name: view.pkg.name, version: view.selectedVersion(), system: system() }
+      ? {
+          name: view.pkg.name,
+          version: view.selectedVersion(),
+          system: system(),
+          digest: view.entry().platforms[system()].record,
+        }
       : undefined,
   );
 
@@ -97,39 +102,18 @@ export default function ProvenancePanel(props: { view: PackageView }) {
                       <code>{entry().source || "—"}</code>
                     </dd>
                   </div>
-                  <div class="flex flex-wrap items-baseline justify-between gap-x-4 px-2 py-1">
+                  <div class="flex flex-wrap items-baseline justify-between gap-x-4 border-b border-edge px-2 py-1">
                     <dt class="opacity-80">Build receipt</dt>
                     <dd class="min-w-0 break-all">
-                      <Show
-                        when={entry().receiptUrl}
-                        fallback={<code>{entry().receiptSha256.slice(0, 16)}…</code>}
-                      >
-                        <a
-                          class="link"
-                          href={entry().receiptUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <code>{entry().receiptSha256.slice(0, 16)}…</code>
-                        </a>
-                      </Show>
+                      <code>{entry().receiptSha256.slice(0, 16)}…</code>
                     </dd>
                   </div>
-                  <Show when={entry().approvalSequence}>
-                    <div class="flex flex-wrap items-baseline justify-between gap-x-4 border-t border-edge px-2 py-1">
-                      <dt class="opacity-80">Approved in</dt>
-                      <dd class="min-w-0 break-all">
-                        <a
-                          class="link"
-                          href={entry().approvalUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          snapshot <span class="tabular-nums">{entry().approvalSequence}</span>
-                        </a>
-                      </dd>
-                    </div>
-                  </Show>
+                  <div class="flex flex-wrap items-baseline justify-between gap-x-4 px-2 py-1">
+                    <dt class="opacity-80">Signed</dt>
+                    <dd class="tabular-nums">
+                      {new Date(entry().published * 1000).toISOString().slice(0, 10)}
+                    </dd>
+                  </div>
                 </dl>
               )}
             </Match>

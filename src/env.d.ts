@@ -3,6 +3,6 @@ interface ViteTypeOptions {
 }
 
 interface ImportMetaEnv {
-  readonly VITE_CATALOG_URL: string;
+  readonly VITE_PDR_URL: string;
   readonly VITE_CATALOG_PUBLIC_KEY: string;
 }

@@ -15,6 +15,11 @@ export function webUrl(value: string): string {
   return url.href;
 }
 
+/** PDR documents live beside the root, so a mirror is a copy of the directory. */
+export function pdrUrl(root: string, kind: "packages" | "records", digest: string): string {
+  return new URL(`${kind}/${digest}.json`, root).href;
+}
+
 export async function bytes(url: string, limit: number): Promise<Uint8Array<ArrayBuffer>> {
   const parsedUrl = new URL(url);
   if (!parsedUrl.protocol.startsWith("http")) {

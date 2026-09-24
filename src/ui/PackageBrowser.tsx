@@ -1,5 +1,5 @@
 import { For, Match, Show, Switch } from "solid-js";
-import { docs, indexRepositoryUrl } from "../config.ts";
+import { docs, recipesUrl } from "../config.ts";
 import { clearFilters, platform, query, syncUrlState } from "../state/browser-state.ts";
 import { catalog, error, refetch, results } from "../state/catalog-resource.ts";
 import PackageList from "./PackageList.tsx";
@@ -46,12 +46,7 @@ export default function PackageBrowser() {
             <a class="link block" href={docs.packaging}>
               Contribute a package ↗
             </a>
-            <a
-              class="link block"
-              href={indexRepositoryUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a class="link block" href={recipesUrl} target="_blank" rel="noopener noreferrer">
               Browse recipes ↗
             </a>
           </nav>

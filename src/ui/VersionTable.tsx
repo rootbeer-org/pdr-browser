@@ -1,7 +1,7 @@
 import { For, Show } from "solid-js";
 import { cn } from "cn";
 import { platforms } from "../catalog/types.ts";
-import { defaultVersion } from "../catalog/versions.ts";
+import { defaultVersion, hasSplitDefaults } from "../catalog/versions.ts";
 import { platform, selectVersion, version } from "../state/browser-state.ts";
 import type { PackageView } from "../state/package-view.ts";
 
@@ -9,17 +9,15 @@ export default function VersionTable(props: { view: PackageView }) {
   const view = props.view;
 
   const systemLabel = () => platforms.find(({ id }) => id === platform())?.short ?? "";
-  /** Every version of a package publishes the same platforms, so state it once. */
   const coverage = () =>
     platform()
       ? systemLabel()
       : platforms
-          .filter(({ id }) => view.pkg.versions[view.selectedVersion()].systems.includes(id))
+          .filter(({ id }) => view.systems().includes(id))
           .map(({ short }) => short)
           .join(" · ");
 
-  const hasPlatformDefaults = () =>
-    !platform() && Object.keys(view.pkg.default_versions ?? {}).length > 0;
+  const hasPlatformDefaults = () => !platform() && hasSplitDefaults(view.pkg);
 
   return (
     <section class="mt-6" aria-label={`${view.pkg.name} versions`}>

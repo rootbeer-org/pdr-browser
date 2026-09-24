@@ -3,21 +3,54 @@ export interface CatalogSource {
   publicKey: string;
 }
 
-export interface CatalogPackage {
+export type PackageKind = "command" | "library" | "app";
+
+export interface RootPlatform {
+  version: string;
+  kind: PackageKind;
+  commands: string[];
+}
+
+export interface RootPackage {
   name: string;
   aliases: string[];
   description: string;
   homepage: string;
-  default_version: string;
-  default_versions?: Record<string, string>;
-  versions: Record<string, CatalogRecipe>;
+  license: string;
+  added: number;
+  updated: number;
+  platforms: Record<string, RootPlatform>;
+  document: string;
 }
 
-export interface CatalogRecipe {
-  systems: string[];
-  bins: string[];
-  apps?: Record<string, string>;
+export interface Root {
+  packages: RootPackage[];
+  sequence: number;
+}
+
+export interface PackageDocument {
+  name: string;
+  versions: Record<string, DocumentVersion>;
+}
+
+export interface DocumentVersion {
+  license: string;
   revision: number;
+  platforms: Record<string, DocumentPlatform>;
+}
+
+export interface DocumentPlatform {
+  recipe: CatalogRecipe;
+  record: string;
+  published: number;
+}
+
+/** Bare names defer their paths to the artifact; a map fixes them. */
+export type Bins = string[] | Record<string, string>;
+
+export interface CatalogRecipe {
+  bins?: Bins;
+  apps?: Record<string, string>;
   source?: string;
   build?: {
     backend?: string;
@@ -33,21 +66,7 @@ export interface PackageRecord {
   revision: number;
   source: string;
   receiptSha256: string;
-  receiptUrl?: string;
-  approvalSequence?: number;
-  approvalUrl?: string;
-}
-
-export interface RecordPin {
-  url: string;
-  sha256: string;
-}
-
-export type PackageRecords = Record<string, Record<string, RecordPin>>;
-export interface Catalog {
-  packages: CatalogPackage[];
-  records: PackageRecords;
-  sequence: number;
+  published: number;
 }
 
 export interface Platform {

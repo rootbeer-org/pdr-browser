@@ -1,9 +1,8 @@
-import type { CatalogPackage, CatalogRecipe, DependencyKind } from "./types.ts";
+import type { CatalogRecipe, DependencyKind, PackageKind, RootPackage } from "./types.ts";
 
 export type UsageMode = "run" | "use" | "config";
 export type DetailMode = UsageMode | "bootstrap";
 
-export type PackageKind = "command" | "library" | "app";
 export interface SnippetRequest {
   mode: DetailMode;
   version: string;
@@ -29,30 +28,36 @@ const DEPENDENCY_LABELS: Record<DependencyKind, string> = {
   link_runtime: "Link / runtime",
 };
 
+export function binNames(recipe: CatalogRecipe): string[] {
+  const bins = recipe.bins ?? [];
+  return Array.isArray(bins) ? bins : Object.keys(bins);
+}
+
 export function packageKind(recipe: CatalogRecipe): PackageKind {
-  if (recipe.bins.length) return "command";
+  if (binNames(recipe).length) return "command";
   if (recipe.build?.libraries?.length) return "library";
   return "app";
 }
 
-export function primaryCommand(pkg: CatalogPackage, version: string): string {
-  const bins = pkg.versions[version]?.bins ?? [];
+export function primaryCommand(pkg: RootPackage, recipe: CatalogRecipe): string {
+  const bins = binNames(recipe);
   return bins.includes(pkg.name) ? pkg.name : bins.length === 1 ? bins[0] : "";
 }
 
-export function usageModes(pkg: CatalogPackage, recipe: CatalogRecipe): [DetailMode, string][] {
+export function usageModes(pkg: RootPackage, recipe: CatalogRecipe): [DetailMode, string][] {
   const isRootbeer = pkg.name === "rootbeer";
   return [
     ...(isRootbeer ? ([["bootstrap", "Install Rootbeer"]] as [DetailMode, string][]) : []),
     ["use", isRootbeer ? "Install with rb" : "Install"],
     // An app bundle has no command to run once.
-    ...(recipe.bins.length ? ([["run", "Run once"]] as [DetailMode, string][]) : []),
+    ...(binNames(recipe).length ? ([["run", "Run once"]] as [DetailMode, string][]) : []),
     ["config", "Lua config"],
   ];
 }
 
 export function packageCommand(
-  pkg: CatalogPackage,
+  pkg: RootPackage,
+  recipe: CatalogRecipe,
   mode: UsageMode,
   version = "",
   bin = "",
@@ -63,14 +68,12 @@ export function packageCommand(
   }
 
   const selectedBin =
-    mode === "run" && bin && bin !== primaryCommand(pkg, version || pkg.default_version)
-      ? ` --bin ${quote(bin)}`
-      : "";
+    mode === "run" && bin && bin !== primaryCommand(pkg, recipe) ? ` --bin ${quote(bin)}` : "";
   return `rb ${mode}${selectedBin} ${quote(request)}`;
 }
 
 export function usageSnippet(
-  pkg: CatalogPackage,
+  pkg: RootPackage,
   recipe: CatalogRecipe,
   request: SnippetRequest,
 ): string {
@@ -81,6 +84,7 @@ export function usageSnippet(
 
   const command = packageCommand(
     pkg,
+    recipe,
     request.mode,
     request.isPinned ? request.version : "",
     request.mode === "run" ? request.bin : "",

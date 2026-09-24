@@ -1,6 +1,6 @@
 import { For, Match, Show, Switch, createEffect } from "solid-js";
 import { cn } from "cn";
-import { primaryCommand, usageModes } from "../catalog/commands.ts";
+import { usageModes } from "../catalog/commands.ts";
 import { defaultVersion } from "../catalog/versions.ts";
 import { docs } from "../config.ts";
 import { platform, selectVersion, version } from "../state/browser-state.ts";
@@ -16,9 +16,7 @@ export default function UsagePanel(props: { view: PackageView }) {
     clipboard.reset();
   });
 
-  const defaultBin = () =>
-    primaryCommand(view.pkg, view.selectedVersion()) || view.recipe().bins[0];
-  const otherBins = () => view.recipe().bins.filter((name) => name !== defaultBin());
+  const otherBins = () => view.bins().filter((name) => name !== view.defaultBin());
 
   const guide = () => {
     if (view.mode() === "bootstrap") return [docs.gettingStarted, "Installation guide"];
@@ -86,7 +84,7 @@ export default function UsagePanel(props: { view: PackageView }) {
             </select>
           </label>
 
-          <Show when={view.mode() === "run" && view.recipe().bins.length > 1}>
+          <Show when={view.mode() === "run" && view.bins().length > 1}>
             <label class="flex flex-1 flex-col gap-y-1">
               <span class="uppercase opacity-50">Command</span>
               <select
@@ -94,7 +92,7 @@ export default function UsagePanel(props: { view: PackageView }) {
                 value={view.selectedBin()}
                 onChange={(event) => view.selectBin(event.currentTarget.value)}
               >
-                <option value="">{defaultBin()}</option>
+                <option value="">{view.defaultBin()}</option>
                 <For each={otherBins()}>{(name) => <option value={name}>{name}</option>}</For>
               </select>
             </label>

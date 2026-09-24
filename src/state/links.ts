@@ -1,5 +1,5 @@
 import type { CatalogRecipe } from "../catalog/types.ts";
-import { indexRepositoryUrl } from "../config.ts";
+import { recipesUrl } from "../config.ts";
 
 export function packageHref(name: string, version = "", system = ""): string {
   const params = new URLSearchParams({ show: name });
@@ -9,7 +9,7 @@ export function packageHref(name: string, version = "", system = ""): string {
 }
 
 export function recipeHref(name: string): string {
-  return `${indexRepositoryUrl}/blob/main/packages/${name}.lua`;
+  return `${recipesUrl}/blob/main/packages/${name}.lua`;
 }
 
 export function sourceHref(recipe: CatalogRecipe | undefined): string {

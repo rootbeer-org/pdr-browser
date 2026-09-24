@@ -1,4 +1,4 @@
-import type { CatalogPackage } from "./types.ts";
+import type { PackageDocument, RootPackage } from "./types.ts";
 
 const natural = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
 
@@ -41,22 +41,28 @@ export function compareVersions(a: string, b: string): number {
   return 0;
 }
 
-export function defaultVersion(pkg: CatalogPackage, system: string): string {
-  return pkg.default_versions?.[system] ?? pkg.default_version;
+/** Without a platform, the newest default any platform ships. */
+export function defaultVersion(pkg: RootPackage, system = ""): string {
+  if (system) return pkg.platforms[system]?.version ?? "";
+  return platformDefaults(pkg).sort((a, b) => compareVersions(b, a))[0] ?? "";
 }
 
-export function availableVersions(pkg: CatalogPackage, system = ""): string[] {
-  return Object.keys(pkg.versions)
-    .filter((version) =>
-      system
-        ? pkg.versions[version].systems.includes(system)
-        : pkg.versions[version].systems.length > 0,
-    )
+export function hasSplitDefaults(pkg: RootPackage): boolean {
+  return new Set(platformDefaults(pkg)).size > 1;
+}
+
+export function availableVersions(document: PackageDocument, system = ""): string[] {
+  return Object.keys(document.versions)
+    .filter((version) => !system || Object.hasOwn(document.versions[version].platforms, system))
     .sort((a, b) => compareVersions(b, a) || b.localeCompare(a));
 }
 
-export function preferredVersion(pkg: CatalogPackage, system = ""): string {
-  const versions = availableVersions(pkg, system);
+export function preferredVersion(pkg: RootPackage, document: PackageDocument, system = ""): string {
+  const versions = availableVersions(document, system);
   const preferred = defaultVersion(pkg, system);
   return versions.includes(preferred) ? preferred : (versions[0] ?? "");
+}
+
+function platformDefaults(pkg: RootPackage): string[] {
+  return Object.values(pkg.platforms).map(({ version }) => version);
 }

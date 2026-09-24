@@ -1,25 +1,25 @@
 import { rawField } from "./raw.ts";
-import { bytes, webUrl } from "./transport.ts";
-import type { PackageRecord, RecordPin } from "./types.ts";
-import { verifyApproval, verifyDigest, verifyRecord } from "./verify.ts";
+import { bytes, pdrUrl } from "./transport.ts";
+import type { CatalogSource, PackageRecord } from "./types.ts";
+import { verifyDigest, verifyRecord } from "./verify.ts";
 
 const RECORD_LIMIT = 1024 * 1024;
 
 export async function loadRecord(
-  pin: RecordPin,
-  publicKey: string,
+  source: CatalogSource,
+  digest: string,
   expect: { name: string; version: string; system: string },
 ): Promise<PackageRecord> {
-  const raw = await bytes(pin.url, RECORD_LIMIT);
-  await verifyDigest(raw, pin.sha256);
+  const raw = await bytes(pdrUrl(source.url, "records", digest), RECORD_LIMIT);
+  await verifyDigest(raw, digest, "The package record could not be verified.");
 
   const text = new TextDecoder().decode(raw);
   const document = JSON.parse(text);
-  await verifyRecord(rawField(text, "record"), document.signature, publicKey);
+  await verifyRecord(rawField(text, "record"), document.signature, source.publicKey);
 
   const record = document.record;
   const artifact = record?.artifact;
-  if (record?.schema !== 1 || !artifact?.package) {
+  if (record?.schema !== 2 || !artifact?.package) {
     throw new Error("The package record is not supported.");
   }
   if (
@@ -30,18 +30,12 @@ export async function loadRecord(
     throw new Error("The package record does not match the package requested.");
   }
 
-  const receipt = record.provenance?.receipt;
-  const approval = record.provenance?.approval;
-  if (approval) await verifyApproval(approval, publicKey);
-
   return {
     system: record.system,
     revision: artifact.revision,
     source: sourceReference(artifact.package.source),
     receiptSha256: artifact.receipt_sha256,
-    receiptUrl: receipt?.url ? webUrl(receipt.url) : undefined,
-    approvalSequence: approval?.sequence,
-    approvalUrl: approval ? webUrl(approval.index.url) : undefined,
+    published: record.published,
   };
 }
 
