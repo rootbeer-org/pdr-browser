@@ -51,11 +51,14 @@ export function validateDocument(document: any, expect: RootPackage): PackageDoc
 
 function validatePackage(name: string, entry: any): RootPackage {
   const aliases = entry.aliases ?? [];
+  const maintainers = entry.maintainers ?? [];
   if (
     !NAME_PATTERN.test(name) ||
     typeof entry.description !== "string" ||
     !Array.isArray(aliases) ||
     !aliases.every((alias) => typeof alias === "string") ||
+    !Array.isArray(maintainers) ||
+    !maintainers.every((maintainer) => typeof maintainer === "string") ||
     !isObject(entry.platforms)
   ) {
     throw new Error("The package repository contains an invalid package.");
@@ -72,6 +75,7 @@ function validatePackage(name: string, entry: any): RootPackage {
     description: entry.description,
     homepage: webUrl(entry.homepage),
     license: typeof entry.license === "string" ? entry.license : "",
+    maintainers,
     added: Number(entry.added) || 0,
     updated: Number(entry.updated) || 0,
     platforms: Object.fromEntries(

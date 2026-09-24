@@ -17,6 +17,7 @@ export interface RootPackage {
   description: string;
   homepage: string;
   license: string;
+  maintainers: string[];
   added: number;
   updated: number;
   platforms: Record<string, RootPlatform>;

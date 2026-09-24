@@ -17,10 +17,29 @@ export default function MetadataPanel(props: { view: PackageView }) {
   const view = props.view;
 
   const dependencies = () => packageDependencies(view.recipe());
+  const day = (seconds: number) => new Date(seconds * 1000).toISOString().slice(0, 10);
+  const facts = () =>
+    [
+      ["License", view.pkg.license],
+      ["Maintainers", view.pkg.maintainers.join(", ")],
+      ["Updated", view.pkg.updated ? day(view.pkg.updated) : ""],
+      ["Added", view.pkg.added ? day(view.pkg.added) : ""],
+    ].filter(([, value]) => value);
   const backend = () => view.recipe().build?.backend ?? (view.recipe().source ? "prebuilt" : "");
 
   return (
     <section class="flex flex-col gap-y-4" aria-label={`${view.pkg.name} package details`}>
+      <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4">
+        <For each={facts()}>
+          {([label, value]) => (
+            <>
+              <dt class="opacity-50">{label}</dt>
+              <dd class="tabular-nums">{value}</dd>
+            </>
+          )}
+        </For>
+      </dl>
+
       <Show when={backend()}>
         <p class="opacity-80">
           {backend() === "prebuilt" ? (
