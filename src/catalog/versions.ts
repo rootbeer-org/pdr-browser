@@ -1,4 +1,4 @@
-import type { PackageDocument, RootPackage } from "./types.ts";
+import { platforms, type PackageDocument, type RootPackage } from "./types.ts";
 
 const natural = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
 
@@ -52,9 +52,15 @@ export function hasSplitDefaults(pkg: RootPackage): boolean {
 }
 
 export function availableVersions(document: PackageDocument, system = ""): string[] {
+  const published = (version: string) => {
+    const entries = document.versions[version].platforms;
+    if (system) return entries[system]?.published ?? 0;
+    return Math.max(0, ...Object.values(entries).map((entry) => entry.published));
+  };
+
   return Object.keys(document.versions)
     .filter((version) => !system || Object.hasOwn(document.versions[version].platforms, system))
-    .sort((a, b) => compareVersions(b, a) || b.localeCompare(a));
+    .sort((a, b) => compareVersions(b, a) || published(b) - published(a) || b.localeCompare(a));
 }
 
 export function preferredVersion(pkg: RootPackage, document: PackageDocument, system = ""): string {
@@ -65,4 +71,13 @@ export function preferredVersion(pkg: RootPackage, document: PackageDocument, sy
 
 function platformDefaults(pkg: RootPackage): string[] {
   return Object.values(pkg.platforms).map(({ version }) => version);
+}
+
+export function packagePlatform(document: PackageDocument, requested = "", version = ""): string {
+  if (requested) return requested;
+
+  const entries = document.versions[version]
+    ? [document.versions[version]]
+    : Object.values(document.versions);
+  return platforms.find(({ id }) => entries.some((entry) => entry.platforms[id]))?.id ?? "";
 }

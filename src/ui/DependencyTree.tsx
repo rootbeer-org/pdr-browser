@@ -16,8 +16,13 @@ import { findPackage } from "../state/queries.ts";
 
 export default function DependencyTree(props: { view: PackageView }) {
   return (
-    <section class="mt-6 border-t border-edge pt-4" aria-label="Dependencies">
-      <h3 class="heading">Dependencies</h3>
+    <details open class="mt-6 border-t border-edge pt-4" aria-label="Dependencies">
+      <summary class="mb-3 w-fit cursor-pointer hover:text-accent">
+        <span class="font-bold uppercase">Dependencies</span>
+        <span class="ml-2 tabular-nums opacity-70">
+          · {packageDependencies(props.view.recipe()).length} direct
+        </span>
+      </summary>
       <Show
         when={packageDependencies(props.view.recipe()).length}
         fallback={<p class="opacity-80">No dependencies declared.</p>}
@@ -26,7 +31,7 @@ export default function DependencyTree(props: { view: PackageView }) {
           {(_selection) => <DependencyGraph view={props.view} />}
         </Show>
       </Show>
-    </section>
+    </details>
   );
 }
 

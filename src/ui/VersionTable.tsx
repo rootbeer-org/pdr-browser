@@ -1,33 +1,23 @@
 import { For, Show } from "solid-js";
 import { cn } from "cn";
 import { platforms } from "../catalog/types.ts";
-import { defaultVersion, hasSplitDefaults } from "../catalog/versions.ts";
+import { defaultVersion } from "../catalog/versions.ts";
 import { useBrowserState } from "../state/browser-state.ts";
 import type { PackageView } from "../state/package-view.ts";
 
 export default function VersionTable(props: { view: PackageView }) {
-  const { platform, selectVersion, version } = useBrowserState();
+  const { selectVersion } = useBrowserState();
   const view = props.view;
+  const platform = view.system;
 
   const systemLabel = () => platforms.find(({ id }) => id === platform())?.short ?? "";
-  const coverage = () =>
-    platform()
-      ? systemLabel()
-      : platforms
-          .filter(({ id }) => view.systems().includes(id))
-          .map(({ short }) => short)
-          .join(" · ");
-
-  const hasPlatformDefaults = () => !platform() && hasSplitDefaults(view.pkg);
-
   return (
-    <section class="mt-6" aria-label={`${view.pkg.name} versions`}>
-      <h3 class="heading">
-        <span>Available versions</span>
-        <span class="ml-auto normal-case tabular-nums opacity-50">
-          {view.versions().length} · newest first · {coverage()}
-        </span>
-      </h3>
+    <details class="mt-6 border-t border-edge pt-4" aria-label={`${view.pkg.name} versions`}>
+      <summary class="w-fit cursor-pointer hover:text-accent">
+        <span class="font-bold uppercase">Version history</span>
+        <span class="ml-2 tabular-nums opacity-70">· {view.versions().length}</span>
+      </summary>
+      <p class="mt-3 mb-2 text-xs opacity-70">Newest first · {systemLabel()}</p>
 
       <div class="max-h-72 overflow-auto border border-edge">
         <table class="w-full border-collapse">
@@ -56,7 +46,7 @@ export default function VersionTable(props: { view: PackageView }) {
                     <code>{entry}</code>
                     <Show when={entry === defaultVersion(view.pkg, platform())}>
                       <span class="ml-2 border border-accent bg-accent-soft px-1 text-accent">
-                        Default{hasPlatformDefaults() ? "*" : ""}
+                        Default
                       </span>
                     </Show>
                   </th>
@@ -67,7 +57,7 @@ export default function VersionTable(props: { view: PackageView }) {
                       class="text-accent hover:underline"
                       onClick={() => selectVersion(entry)}
                     >
-                      {version() === entry ? "Selected" : "Use version"}
+                      {view.selectedVersion() === entry ? "Selected" : "Use version"}
                     </button>
                   </td>
                 </tr>
@@ -76,12 +66,6 @@ export default function VersionTable(props: { view: PackageView }) {
           </tbody>
         </table>
       </div>
-
-      <Show when={hasPlatformDefaults()}>
-        <p class="mt-2 opacity-50">
-          * Some platforms use a different default; see the platform list above.
-        </p>
-      </Show>
-    </section>
+    </details>
   );
 }

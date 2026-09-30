@@ -7,13 +7,19 @@ import {
   type DetailMode,
 } from "../catalog/commands.ts";
 import { platforms, type PackageData } from "../catalog/types.ts";
-import { availableVersions, defaultVersion, preferredVersion } from "../catalog/versions.ts";
+import {
+  availableVersions,
+  defaultVersion,
+  packagePlatform,
+  preferredVersion,
+} from "../catalog/versions.ts";
 import { useBrowserState } from "./browser-state.ts";
 
 export type PackageView = ReturnType<typeof createPackageView>;
 
 export function createPackageView({ pkg, document, records }: PackageData) {
-  const { platform, version } = useBrowserState();
+  const { platform: requestedPlatform, version } = useBrowserState();
+  const platform = () => packagePlatform(document, requestedPlatform(), version());
   const [mode, setMode] = createSignal<DetailMode>(
     pkg.name === "rootbeer" && !version() ? "bootstrap" : "use",
   );

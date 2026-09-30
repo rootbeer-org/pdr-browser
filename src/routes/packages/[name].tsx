@@ -1,6 +1,7 @@
 import { Meta, Title } from "@solidjs/meta";
 import { createAsync, useParams } from "@solidjs/router";
 import { For, Show } from "solid-js";
+import { packagePlatform } from "../../catalog/versions.ts";
 import { platforms } from "../../catalog/types.ts";
 import { useBrowserState } from "../../state/browser-state.ts";
 import { findPackage } from "../../state/queries.ts";
@@ -53,13 +54,12 @@ export default function PackagePage() {
                   </a>
                 </div>
                 <label class="flex flex-col gap-y-1">
-                  <span class="uppercase opacity-50">Platform</span>
+                  <span class="text-xs uppercase opacity-80">Platform</span>
                   <select
                     class="field"
-                    value={platform()}
+                    value={packagePlatform(loaded.document, platform(), version())}
                     onChange={(event) => filterPlatform(event.currentTarget.value)}
                   >
-                    <option value="">All platforms</option>
                     <For each={platforms}>
                       {(entry) => <option value={entry.id}>{entry.short}</option>}
                     </For>

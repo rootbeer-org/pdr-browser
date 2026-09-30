@@ -5,10 +5,11 @@ import { defaultVersion } from "../catalog/versions.ts";
 import { docs } from "../config.ts";
 import { useBrowserState } from "../state/browser-state.ts";
 import { createClipboard } from "../state/clipboard.ts";
+import ProvenancePanel from "./ProvenancePanel.tsx";
 import type { PackageView } from "../state/package-view.ts";
 
 export default function UsagePanel(props: { view: PackageView }) {
-  const { platform, selectVersion, version } = useBrowserState();
+  const { selectVersion, version } = useBrowserState();
   const view = props.view;
   const clipboard = createClipboard();
 
@@ -30,7 +31,10 @@ export default function UsagePanel(props: { view: PackageView }) {
     view.isLibrary() ? "Package recipe" : view.mode() === "config" ? "init.lua" : "Terminal";
 
   return (
-    <section class="flex flex-col gap-y-3" aria-label={`Use ${view.pkg.name}`}>
+    <section class="min-w-0 flex flex-col gap-y-3" aria-label={`Use ${view.pkg.name}`}>
+      <h3 class="font-bold uppercase">
+        {view.isLibrary() ? "Use this library" : "Use this package"}
+      </h3>
       <Show when={!view.isLibrary()}>
         <fieldset>
           <legend class="sr-only">Use this package</legend>
@@ -63,8 +67,8 @@ export default function UsagePanel(props: { view: PackageView }) {
 
       <Show when={view.mode() !== "bootstrap"}>
         <div class="flex flex-wrap gap-x-4 gap-y-2">
-          <label class="flex flex-1 flex-col gap-y-1">
-            <span class="uppercase opacity-50">Version</span>
+          <label class="flex min-w-0 flex-1 flex-col gap-y-1">
+            <span class="text-xs uppercase opacity-80">Version</span>
             <select
               class="field w-full"
               value={version()}
@@ -79,15 +83,15 @@ export default function UsagePanel(props: { view: PackageView }) {
                 when={view.isDefaultAvailable()}
                 fallback={<option value="">{view.selectedVersion()}</option>}
               >
-                <option value="">Latest ({defaultVersion(view.pkg, platform())})</option>
+                <option value="">Default ({defaultVersion(view.pkg, view.system())})</option>
               </Show>
               <For each={view.versions()}>{(entry) => <option value={entry}>{entry}</option>}</For>
             </select>
           </label>
 
           <Show when={view.mode() === "run" && view.bins().length > 1}>
-            <label class="flex flex-1 flex-col gap-y-1">
-              <span class="uppercase opacity-50">Command</span>
+            <label class="flex min-w-0 flex-1 flex-col gap-y-1">
+              <span class="text-xs uppercase opacity-80">Command</span>
               <select
                 class="field w-full"
                 value={view.selectedBin()}
@@ -99,6 +103,47 @@ export default function UsagePanel(props: { view: PackageView }) {
             </label>
           </Show>
         </div>
+      </Show>
+
+      <Show when={!view.isInvalidVersion()}>
+        <ProvenancePanel view={view} />
+      </Show>
+
+      <Show
+        when={view.mode() === "bootstrap" || !view.isInvalidVersion()}
+        fallback={
+          <p role="alert" class="border border-edge px-2 py-1 opacity-80">
+            Version {version()} is not available on this platform. Choose an available version to
+            see its install command.
+          </p>
+        }
+      >
+        <div class="border border-edge bg-inset">
+          <div class="flex items-center justify-between gap-3 border-b border-edge px-3 py-2">
+            <span class="text-xs uppercase opacity-80">{snippetLabel()}</span>
+            <button
+              type="button"
+              class="shrink-0 border border-accent bg-accent-soft px-3 py-1.5 font-bold text-accent hover:bg-hover"
+              aria-label={`Copy ${view.isLibrary() ? "build dependency" : view.mode()} instructions for ${view.pkg.name}`}
+              onClick={() => clipboard.copy(view.snippet())}
+            >
+              {clipboard.copied() ? "Copied" : "Copy"}
+            </button>
+          </div>
+          <pre class="overflow-x-auto p-4 text-base leading-relaxed">
+            <code>{view.snippet()}</code>
+          </pre>
+        </div>
+      </Show>
+
+      <span role="status" class="sr-only">
+        {clipboard.copied() ? "Copied to clipboard." : ""}
+      </span>
+
+      <Show when={clipboard.failed()}>
+        <p role="status" class="opacity-80">
+          Could not copy. Select and copy the command above.
+        </p>
       </Show>
 
       <Switch>
@@ -137,39 +182,6 @@ export default function UsagePanel(props: { view: PackageView }) {
           </p>
         </Match>
       </Switch>
-
-      <Show
-        when={view.mode() === "bootstrap" || !view.isInvalidVersion()}
-        fallback={
-          <p role="alert" class="border border-edge px-2 py-1 opacity-80">
-            Version {version()} is not available{platform() ? " on this platform" : ""}. Choose an
-            available version to see its install command.
-          </p>
-        }
-      >
-        <div class="border border-edge bg-inset">
-          <div class="flex items-baseline justify-between border-b border-edge px-2 py-1 uppercase opacity-50">
-            <span>{snippetLabel()}</span>
-            <button
-              type="button"
-              class="hover:text-accent hover:underline"
-              aria-label={`Copy ${view.isLibrary() ? "build dependency" : view.mode()} instructions for ${view.pkg.name}`}
-              onClick={() => clipboard.copy(view.snippet())}
-            >
-              {clipboard.copied() ? "Copied" : "Copy"}
-            </button>
-          </div>
-          <pre class="overflow-x-auto px-2 py-2 leading-relaxed">
-            <code>{view.snippet()}</code>
-          </pre>
-        </div>
-      </Show>
-
-      <Show when={clipboard.failed()}>
-        <p role="status" class="opacity-80">
-          Could not copy. Select and copy the command below.
-        </p>
-      </Show>
 
       <a class="link" href={guide()[0]} target="_blank" rel="noopener noreferrer">
         {guide()[1]} →
