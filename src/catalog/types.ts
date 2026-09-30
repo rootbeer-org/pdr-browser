@@ -82,3 +82,9 @@ export const platforms: Platform[] = [
   { id: "aarch64-linux", label: "Linux · ARM64", short: "Linux ARM64" },
   { id: "x86_64-linux", label: "Linux · x86-64", short: "Linux x86-64" },
 ];
+
+export interface PackageData {
+  pkg: RootPackage;
+  document: PackageDocument;
+  records: Record<string, PackageRecord>;
+}

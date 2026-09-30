@@ -1,9 +1,7 @@
 import { Meta, Title } from "@solidjs/meta";
 import { createAsync, useParams } from "@solidjs/router";
-import { HttpStatusCode } from "@solidjs/start";
 import { For, Show } from "solid-js";
 import { platforms } from "../../catalog/types.ts";
-import { availableVersions } from "../../catalog/versions.ts";
 import { useBrowserState } from "../../state/browser-state.ts";
 import { findPackage } from "../../state/queries.ts";
 import PackageDetails from "../../ui/PackageDetails.tsx";
@@ -12,12 +10,6 @@ export default function PackagePage() {
   const params = useParams<{ name: string }>();
   const { platform, filterPlatform, version } = useBrowserState();
   const data = createAsync(() => findPackage(params.name));
-  const isUnavailable = () => {
-    const loaded = data();
-    if (!loaded) return true;
-    const versions = availableVersions(loaded.document, platform());
-    return !versions.length || (Boolean(version()) && !versions.includes(version()));
-  };
 
   return (
     <>
@@ -34,7 +26,6 @@ export default function PackagePage() {
           keyed
           fallback={
             <div class="mt-4 border border-edge p-4">
-              <HttpStatusCode code={404} />
               <h2 class="heading">Package not found</h2>
               <p>“{params.name}” is not in the published collection.</p>
             </div>
@@ -42,7 +33,6 @@ export default function PackagePage() {
         >
           {(loaded) => (
             <article class="mt-4 border border-edge">
-              <HttpStatusCode code={isUnavailable() ? 404 : 200} />
               <Meta name="description" content={loaded.pkg.description} />
               <header class="flex flex-wrap items-start gap-x-6 gap-y-3 p-3">
                 <div class="min-w-0 flex-1">
@@ -76,7 +66,7 @@ export default function PackagePage() {
                   </select>
                 </label>
               </header>
-              <PackageDetails pkg={loaded.pkg} document={loaded.document} />
+              <PackageDetails {...loaded} />
             </article>
           )}
         </Show>

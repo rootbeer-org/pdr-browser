@@ -6,13 +6,13 @@ import {
   usageSnippet,
   type DetailMode,
 } from "../catalog/commands.ts";
-import { platforms, type PackageDocument, type RootPackage } from "../catalog/types.ts";
+import { platforms, type PackageData } from "../catalog/types.ts";
 import { availableVersions, defaultVersion, preferredVersion } from "../catalog/versions.ts";
 import { useBrowserState } from "./browser-state.ts";
 
 export type PackageView = ReturnType<typeof createPackageView>;
 
-export function createPackageView(pkg: RootPackage, document: PackageDocument) {
+export function createPackageView({ pkg, document, records }: PackageData) {
   const { platform, version } = useBrowserState();
   const [mode, setMode] = createSignal<DetailMode>(
     pkg.name === "rootbeer" && !version() ? "bootstrap" : "use",
@@ -45,6 +45,7 @@ export function createPackageView(pkg: RootPackage, document: PackageDocument) {
   return {
     pkg,
     document,
+    records,
     versions,
     selectedVersion,
     entry,

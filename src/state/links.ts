@@ -5,7 +5,7 @@ export function packageHref(name: string, version = "", system = ""): string {
   const params = new URLSearchParams();
   if (version) params.set("version", version);
   if (system) params.set("platform", system);
-  const path = `/packages/${encodeURIComponent(name)}`;
+  const path = `/packages/${encodeURIComponent(name)}/`;
   return params.size ? `${path}?${params}` : path;
 }
 

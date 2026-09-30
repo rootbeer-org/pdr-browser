@@ -4,7 +4,7 @@
     "target": "es2023",
     "module": "esnext",
     "lib": ["ES2023", "DOM"],
-    "types": ["vite/client", "@solidjs/start/env"],
+    "types": ["vite/client", "@solidjs/start/env", "node"],
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
 

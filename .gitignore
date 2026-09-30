@@ -23,9 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 
-.wrangler
 .solid
 .pnpm-store
 
 .output
 .nitro
+
+public/_catalog
+
+.wrangler

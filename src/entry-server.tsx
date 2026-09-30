@@ -1,5 +1,4 @@
 import { createHandler, StartServer } from "@solidjs/start/server";
-import { renderPage } from "./server/pages.ts";
 
 const handler = createHandler(
   () => (
@@ -23,12 +22,4 @@ const handler = createHandler(
   { mode: "async" },
 );
 
-export default {
-  fetch(request: Request) {
-    return renderPage(
-      request,
-      (request) => Promise.resolve(handler.fetch(request)),
-      import.meta.env.DEV ? "" : import.meta.env.PDR_BUILD_ID,
-    );
-  },
-};
+export default handler;

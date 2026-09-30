@@ -1,5 +1,5 @@
 import { Show } from "solid-js";
-import type { PackageDocument, RootPackage } from "../catalog/types.ts";
+import type { PackageData } from "../catalog/types.ts";
 import { availableVersions } from "../catalog/versions.ts";
 import { useBrowserState } from "../state/browser-state.ts";
 import { packageHref, recipeHref, sourceHref } from "../state/links.ts";
@@ -9,7 +9,7 @@ import ProvenancePanel from "./ProvenancePanel.tsx";
 import UsagePanel from "./UsagePanel.tsx";
 import VersionTable from "./VersionTable.tsx";
 
-export default function PackageDetails(props: { pkg: RootPackage; document: PackageDocument }) {
+export default function PackageDetails(props: PackageData) {
   const { platform } = useBrowserState();
   return (
     <div class="border-t border-edge px-3 py-3">
@@ -17,15 +17,15 @@ export default function PackageDetails(props: { pkg: RootPackage; document: Pack
         when={availableVersions(props.document, platform()).length}
         fallback={<p class="opacity-80">No published versions for this platform.</p>}
       >
-        <Details pkg={props.pkg} document={props.document} />
+        <Details {...props} />
       </Show>
     </div>
   );
 }
 
-function Details(props: { pkg: RootPackage; document: PackageDocument }) {
+function Details(props: PackageData) {
   const { platform } = useBrowserState();
-  const view = createPackageView(props.pkg, props.document);
+  const view = createPackageView(props);
 
   const permalink = () =>
     packageHref(view.pkg.name, view.isPinned() ? view.selectedVersion() : "", platform());
