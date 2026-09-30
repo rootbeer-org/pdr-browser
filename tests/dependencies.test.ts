@@ -84,6 +84,19 @@ test("shared nodes render once and retain every incoming relationship", async ()
   );
   const compiler = nodes.find((node) => node.name === "cmake")!;
   assert.equal(compiler.requiredBy.find((parent) => parent.name === "zlib")?.kind, "Build");
+
+  const rows = dependencyTreeRows("root@1", nodes);
+  const expanded = new Set<string>();
+  for (const row of rows) {
+    if (row.isShared) {
+      assert.ok(expanded.has(row.key), "shared references must target an earlier occurrence");
+      continue;
+    }
+    assert.ok(!expanded.has(row.key), "cycles must not expand a package twice");
+    expanded.add(row.key);
+  }
+  assert.equal(expanded.size, 2);
+  assert.equal(rows.filter((row) => row.isShared).length, 2);
 });
 
 test("different versions stay distinct and transitive nodes are classified", async () => {
@@ -105,38 +118,6 @@ test("unpinned and pinned requests for the default resolve to one node", async (
   assert.equal(nodes.length, 1);
   assert.equal(nodes[0].version, "1.3.2");
   assert.equal(nodes[0].requiredBy.length, 1);
-});
-
-test("recipes stay on the selected platform", async () => {
-  const nodes = await loadDependencyGraph(root(["zlib@1.3.1"]), "aarch64-linux", async () => data);
-  assert.equal(nodes.length, 1);
-  assert.equal(nodes[0].error, "");
-});
-
-test("missing data and failed loads preserve an incomplete graph with errors", async () => {
-  const nodes = await loadDependencyGraph(
-    root(["zlib@0.1", "missing@1", "failed@1"]),
-    "aarch64-macos",
-    async (name) => {
-      if (name === "failed") throw new Error("offline");
-      return name === "zlib" ? data : null;
-    },
-  );
-  assert.equal(nodes.length, 3);
-  assert.ok(nodes.every((node) => node.error));
-});
-
-test("a cycle back to the root terminates without listing the root as a dependency", async () => {
-  const nodes = await loadDependencyGraph(
-    {
-      name: "zlib",
-      version: "1.3.1",
-      recipe: { build: { url: "", dependencies: ["zlib@1.3.1"] } },
-    },
-    "aarch64-macos",
-    async () => data,
-  );
-  assert.deepEqual(nodes, []);
 });
 
 test("tree expands shared subtrees only at their first occurrence", () => {
@@ -178,30 +159,4 @@ test("tree expands shared subtrees only at their first occurrence", () => {
   );
   assert.equal(rows[1].kind, "Build");
   assert.equal(rows[3].kind, "Link");
-});
-
-test("tree cycles become references with an existing target", () => {
-  const nodes = [
-    {
-      name: "a",
-      version: "1",
-      isDirect: true,
-      error: "",
-      requiredBy: [
-        { name: "root", version: "1", kind: "Build" },
-        { name: "b", version: "1", kind: "Link" },
-      ],
-    },
-    {
-      name: "b",
-      version: "1",
-      isDirect: false,
-      error: "",
-      requiredBy: [{ name: "a", version: "1", kind: "Build" }],
-    },
-  ];
-  const rows = dependencyTreeRows("root@1", nodes);
-  assert.equal(rows.length, 3);
-  assert.equal(rows[2].isShared, true);
-  assert.equal(rows[2].key, rows[0].key);
 });

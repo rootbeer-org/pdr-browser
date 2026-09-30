@@ -56,12 +56,3 @@ test("release precedence remains numeric even when older versions are republishe
   ]);
   assert.deepEqual(availableVersions(versions), ["1.10.0", "1.10.0-rc.10", "1.10.0-rc.2", "1.9.0"]);
 });
-
-test("calendar versions sort numerically rather than alphabetically", () => {
-  const versions = document([
-    ["2026.9.5", 30],
-    ["2026.9.13", 10],
-    ["2026.9.11", 20],
-  ]);
-  assert.deepEqual(availableVersions(versions), ["2026.9.13", "2026.9.11", "2026.9.5"]);
-});

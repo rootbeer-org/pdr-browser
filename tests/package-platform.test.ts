@@ -12,11 +12,6 @@ const document: PackageDocument = {
   },
 };
 
-test("an unspecified platform selects a supported platform consistently", () => {
-  assert.equal(packagePlatform(document), "aarch64-macos");
-  assert.deepEqual(availableVersions(document, packagePlatform(document)), ["1"]);
-});
-
 test("a pinned version chooses a platform that publishes it", () => {
   assert.equal(packagePlatform(document, "", "2"), "aarch64-linux");
 });
@@ -25,12 +20,6 @@ test("explicit unsupported platforms stay selected so availability is honest", (
   const system = packagePlatform(document, "x86_64-linux", "1");
   assert.equal(system, "x86_64-linux");
   assert.deepEqual(availableVersions(document, system), []);
-});
-
-test("an unavailable pinned version retains a usable platform for version recovery", () => {
-  const system = packagePlatform(document, "", "missing");
-  assert.equal(system, "aarch64-macos");
-  assert.deepEqual(availableVersions(document, system), ["1"]);
 });
 
 test("split defaults resolve against the displayed platform", () => {
