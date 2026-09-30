@@ -1,22 +1,9 @@
 import { For, Show } from "solid-js";
-import { packageDependencies } from "../catalog/commands.ts";
-import { useBrowserState } from "../state/browser-state.ts";
-import { packageHref } from "../state/links.ts";
 import type { PackageView } from "../state/package-view.ts";
 
-const KIND_LABELS: Record<string, string> = {
-  "Build / link": "build/link",
-  Build: "build",
-  Link: "link",
-  Runtime: "runtime",
-  "Link / runtime": "link/runtime",
-};
-
 export default function MetadataPanel(props: { view: PackageView }) {
-  const { platform } = useBrowserState();
   const view = props.view;
 
-  const dependencies = () => packageDependencies(view.recipe());
   const day = (seconds: number) => new Date(seconds * 1000).toISOString().slice(0, 10);
   const facts = () =>
     [
@@ -75,30 +62,6 @@ export default function MetadataPanel(props: { view: PackageView }) {
           Aliases:
           <For each={view.pkg.aliases}>{(alias) => <code class="ml-2">{alias}</code>}</For>
         </p>
-      </Show>
-
-      <Show when={dependencies().length}>
-        <div>
-          <h3 class="heading">
-            <span>Dependencies</span>
-            <span class="ml-auto tabular-nums opacity-50">{dependencies().length}</span>
-          </h3>
-          <ul class="flex flex-col gap-y-1">
-            <For each={dependencies()}>
-              {(dependency) => (
-                <li class="flex flex-wrap items-baseline justify-between gap-x-3">
-                  <a
-                    class="text-accent hover:underline"
-                    href={packageHref(dependency.name, dependency.version, platform())}
-                  >
-                    <code>{dependency.request}</code>
-                  </a>
-                  <span class="opacity-50">{KIND_LABELS[dependency.kind] ?? dependency.kind}</span>
-                </li>
-              )}
-            </For>
-          </ul>
-        </div>
       </Show>
     </section>
   );

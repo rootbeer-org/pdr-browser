@@ -4,6 +4,7 @@ import { availableVersions } from "../catalog/versions.ts";
 import { useBrowserState } from "../state/browser-state.ts";
 import { packageHref, recipeHref, sourceHref } from "../state/links.ts";
 import { createPackageView } from "../state/package-view.ts";
+import DependencyTree from "./DependencyTree.tsx";
 import MetadataPanel from "./MetadataPanel.tsx";
 import ProvenancePanel from "./ProvenancePanel.tsx";
 import UsagePanel from "./UsagePanel.tsx";
@@ -51,6 +52,8 @@ function Details(props: PackageData) {
         <UsagePanel view={view} />
         <MetadataPanel view={view} />
       </div>
+
+      <DependencyTree view={view} />
 
       <Show when={view.versions().length > 1}>
         <VersionTable view={view} />
