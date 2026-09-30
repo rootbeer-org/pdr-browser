@@ -1,9 +1,8 @@
 import { For, Show } from "solid-js";
 import { packageDependencies } from "../catalog/commands.ts";
-import { platform } from "../state/browser-state.ts";
+import { useBrowserState } from "../state/browser-state.ts";
 import { packageHref } from "../state/links.ts";
 import type { PackageView } from "../state/package-view.ts";
-import ProvenancePanel from "./ProvenancePanel.tsx";
 
 const KIND_LABELS: Record<string, string> = {
   "Build / link": "build/link",
@@ -14,6 +13,7 @@ const KIND_LABELS: Record<string, string> = {
 };
 
 export default function MetadataPanel(props: { view: PackageView }) {
+  const { platform } = useBrowserState();
   const view = props.view;
 
   const dependencies = () => packageDependencies(view.recipe());
@@ -100,8 +100,6 @@ export default function MetadataPanel(props: { view: PackageView }) {
           </ul>
         </div>
       </Show>
-
-      <ProvenancePanel view={view} />
     </section>
   );
 }

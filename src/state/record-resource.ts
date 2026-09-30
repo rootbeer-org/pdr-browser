@@ -1,6 +1,5 @@
 import { createResource } from "solid-js";
-import { loadRecord } from "../catalog/record.ts";
-import { catalogSource } from "../config.ts";
+import { findRecord } from "./queries.ts";
 
 export interface RecordTarget {
   name: string;
@@ -11,6 +10,6 @@ export interface RecordTarget {
 
 export function createRecord(target: () => RecordTarget | undefined) {
   return createResource(target, (requested: RecordTarget) =>
-    loadRecord(catalogSource, requested.digest, requested),
+    findRecord(requested.name, requested.version, requested.system),
   );
 }

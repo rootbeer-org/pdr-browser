@@ -2,10 +2,11 @@ import type { CatalogRecipe } from "../catalog/types.ts";
 import { recipesUrl } from "../config.ts";
 
 export function packageHref(name: string, version = "", system = ""): string {
-  const params = new URLSearchParams({ show: name });
+  const params = new URLSearchParams();
   if (version) params.set("version", version);
   if (system) params.set("platform", system);
-  return `${import.meta.env.BASE_URL}?${params}`;
+  const path = `/packages/${encodeURIComponent(name)}`;
+  return params.size ? `${path}?${params}` : path;
 }
 
 export function recipeHref(name: string): string {

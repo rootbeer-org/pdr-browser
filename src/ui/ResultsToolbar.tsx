@@ -1,29 +1,19 @@
 import { Show } from "solid-js";
 import { platforms } from "../catalog/types.ts";
-import {
-  clearFilters,
-  order,
-  platform,
-  query,
-  sort,
-  type SortOrder,
-} from "../state/browser-state.ts";
-import { catalog, error, results } from "../state/catalog-resource.ts";
+import { useBrowserState, type SortOrder } from "../state/browser-state.ts";
+import type { SearchResult } from "../catalog/search-options.ts";
 
-export default function ResultsToolbar() {
+export default function ResultsToolbar(props: { result: SearchResult }) {
+  const { clearFilters, order, platform, query, sort } = useBrowserState();
   const platformLabel = () => platforms.find(({ id }) => id === platform())?.short ?? "";
 
-  const status = () => {
-    if (catalog.loading) return "Loading packages…";
-    if (error()) return "Catalog unavailable";
-    return `${results().length} ${results().length === 1 ? "package" : "packages"}`;
-  };
+  const status = () => `${props.result.count} ${props.result.count === 1 ? "package" : "packages"}`;
 
   return (
     <div class="my-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
       <p role="status" aria-live="polite" class="tabular-nums">
         {status()}
-        <Show when={!catalog.loading && !error() && platform()}>
+        <Show when={platform()}>
           <span class="opacity-50"> · {platformLabel()}</span>
         </Show>
       </p>

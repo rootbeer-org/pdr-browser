@@ -1,48 +1,26 @@
-import { createSignal, onCleanup, onMount } from "solid-js";
-import { platforms } from "../catalog/types.ts";
+import { useLocation, useSearchParams } from "@solidjs/router";
+import { readSearch, type SortOrder } from "../catalog/search-options.ts";
 
-export type SortOrder = "relevance" | "name" | "name-desc";
-const [params, setParams] = createSignal(new URLSearchParams());
-const read = (key: string) => params().get(key) ?? "";
+export type { SortOrder } from "../catalog/search-options.ts";
 
-function patch(changes: Record<string, string>): void {
-  const url = new URL(window.location.href);
-  for (const [key, value] of Object.entries(changes)) {
-    if (value) url.searchParams.set(key, value);
-    else url.searchParams.delete(key);
-  }
+export function useBrowserState() {
+  const location = useLocation();
+  const [, setParams] = useSearchParams();
+  const options = () => readSearch(new URLSearchParams(location.search));
+  const patch = (changes: Record<string, string>) =>
+    setParams(changes, { replace: true, scroll: false });
 
-  window.history.replaceState(window.history.state, "", url);
-  setParams(url.searchParams);
-}
-
-export const query = () => read("q");
-export const expanded = () => read("show");
-export const version = () => (expanded() ? read("version") : "");
-export const sort = (): SortOrder => {
-  const value = read("sort");
-  if (value === "name" || value === "name-desc") return value;
-  return query() ? "relevance" : "name";
-};
-
-export const platform = () =>
-  platforms.some(({ id }) => id === read("platform")) ? read("platform") : "";
-
-export const search = (value: string) => patch({ q: value, show: "", version: "" });
-export const filterPlatform = (value: string) => patch({ platform: value, show: "", version: "" });
-export const clearFilters = () => patch({ q: "", platform: "", show: "", version: "" });
-
-export const order = (value: SortOrder) => patch({ sort: value === "relevance" ? "" : value });
-export const selectVersion = (value: string) => patch({ version: value });
-export const toggleExpanded = (name: string) =>
-  patch({ show: expanded() === name ? "" : name, version: "" });
-
-export function syncUrlState(): void {
-  const adopt = () => setParams(new URL(window.location.href).searchParams);
-
-  adopt();
-  onMount(() => {
-    window.addEventListener("popstate", adopt);
-    onCleanup(() => window.removeEventListener("popstate", adopt));
-  });
+  return {
+    options,
+    query: () => options().query,
+    platform: () => options().platform,
+    sort: () => options().sort,
+    page: () => options().page,
+    version: () => new URLSearchParams(location.search).get("version") ?? "",
+    search: (value: string) => patch({ q: value, page: "" }),
+    filterPlatform: (value: string) => patch({ platform: value, page: "" }),
+    clearFilters: () => patch({ q: "", platform: "", page: "" }),
+    order: (value: SortOrder) => patch({ sort: value === "relevance" ? "" : value, page: "" }),
+    selectVersion: (value: string) => patch({ version: value }),
+  };
 }

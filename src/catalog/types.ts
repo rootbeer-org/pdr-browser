@@ -63,6 +63,7 @@ export interface CatalogRecipe {
 
 export type DependencyKind = "all" | "build" | "link" | "runtime" | "link_runtime";
 export interface PackageRecord {
+  signature: string;
   system: string;
   revision: number;
   source: string;

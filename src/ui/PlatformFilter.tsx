@@ -1,12 +1,13 @@
 import { For } from "solid-js";
 import { cn } from "cn";
 import { platforms } from "../catalog/types.ts";
-import { filterPlatform, platform } from "../state/browser-state.ts";
-import { catalog, platformCounts, queryCount } from "../state/catalog-resource.ts";
+import { useBrowserState } from "../state/browser-state.ts";
+import type { SearchResult } from "../catalog/search-options.ts";
 
-export default function PlatformFilter() {
+export default function PlatformFilter(props: { result: SearchResult }) {
+  const { filterPlatform, platform } = useBrowserState();
   const entries = () => [{ id: "", short: "All platforms" }, ...platforms];
-  const count = (id: string) => (catalog.loading ? "—" : id ? platformCounts()[id] : queryCount());
+  const count = (id: string) => (id ? props.result.platformCounts[id] : props.result.queryCount);
 
   return (
     <fieldset>

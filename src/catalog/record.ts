@@ -31,6 +31,7 @@ export async function loadRecord(
   }
 
   return {
+    signature: document.signature,
     system: record.system,
     revision: artifact.revision,
     source: sourceReference(artifact.package.source),

@@ -2,10 +2,11 @@ import { For, Show } from "solid-js";
 import { cn } from "cn";
 import { platforms } from "../catalog/types.ts";
 import { defaultVersion, hasSplitDefaults } from "../catalog/versions.ts";
-import { platform, selectVersion, version } from "../state/browser-state.ts";
+import { useBrowserState } from "../state/browser-state.ts";
 import type { PackageView } from "../state/package-view.ts";
 
 export default function VersionTable(props: { view: PackageView }) {
+  const { platform, selectVersion, version } = useBrowserState();
   const view = props.view;
 
   const systemLabel = () => platforms.find(({ id }) => id === platform())?.short ?? "";

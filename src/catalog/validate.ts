@@ -9,7 +9,7 @@ import {
 } from "./types.ts";
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9+._-]*$/;
-const LIBRARY_PATTERN = /^(lib|lib64)\/.+\.a$/;
+const LIBRARY_PATTERN = /^(lib|lib64)\/.+\.(?:a|dylib|so(?:\.\d+)*)$/;
 const KINDS = ["command", "library", "app"];
 
 /**

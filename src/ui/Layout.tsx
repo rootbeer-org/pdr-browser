@@ -1,10 +1,7 @@
-import { catalogHost, docs, recipesUrl } from "./config.ts";
-import { catalog, packages } from "./state/catalog-resource.ts";
-import PackageBrowser from "./ui/PackageBrowser.tsx";
+import { catalogHost, docs, recipesUrl } from "../config.ts";
+import type { ParentProps } from "solid-js";
 
-export default function App() {
-  const count = () => (catalog.loading ? "loading" : `${packages().length} packages`);
-
+export default function Layout(props: ParentProps) {
   return (
     <>
       <a
@@ -15,7 +12,9 @@ export default function App() {
       </a>
       <main class="mx-auto my-4 w-full max-w-6xl flex-1 border border-edge bg-panel p-4">
         <header class="flex flex-col gap-x-4 uppercase sm:flex-row sm:items-baseline">
-          <h1 class="font-bold tracking-wide">Rootbeer Packages</h1>
+          <h1 class="font-bold tracking-wide">
+            <a href="/">Rootbeer Packages</a>
+          </h1>
           <nav class="flex flex-wrap gap-x-4 sm:ml-auto" aria-label="Site">
             <a class="link" href={docs.home}>
               Docs
@@ -28,12 +27,11 @@ export default function App() {
         <hr class="my-3 border-edge" />
 
         <div id="catalog-content" tabindex="-1">
-          <PackageBrowser />
+          {props.children}
         </div>
 
         <hr class="mt-8 mb-3 border-edge" />
         <footer class="flex flex-wrap items-baseline gap-x-4 uppercase opacity-50">
-          <span class="tabular-nums">{count()}</span>
           <span class="ml-auto">{catalogHost}</span>
         </footer>
       </main>

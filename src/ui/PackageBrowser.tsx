@@ -1,7 +1,7 @@
-import { For, Match, Show, Switch } from "solid-js";
+import { For, Show } from "solid-js";
 import { docs, recipesUrl } from "../config.ts";
-import { clearFilters, platform, query, syncUrlState } from "../state/browser-state.ts";
-import { catalog, error, refetch, results } from "../state/catalog-resource.ts";
+import { useBrowserState } from "../state/browser-state.ts";
+import type { SearchResult } from "../catalog/search-options.ts";
 import PackageList from "./PackageList.tsx";
 import PlatformFilter from "./PlatformFilter.tsx";
 import ResultsToolbar from "./ResultsToolbar.tsx";
@@ -19,14 +19,14 @@ const GUIDES = [
  * Narrow screens read search → filter → results → guides, so the sidebar
  * wrappers collapse to `contents` and each block takes its own order.
  */
-export default function PackageBrowser() {
-  syncUrlState();
+export default function PackageBrowser(props: { result: SearchResult }) {
+  const { query, platform, clearFilters } = useBrowserState();
 
   return (
     <div class="flex flex-col gap-6 md:grid md:grid-cols-[13rem_minmax(0,1fr)] md:items-start md:gap-x-8">
       <div class="contents md:flex md:flex-col md:gap-y-6">
         <div class="order-2 md:order-none">
-          <PlatformFilter />
+          <PlatformFilter result={props.result} />
         </div>
 
         <div class="order-4 flex flex-col gap-y-6 md:order-none">
@@ -59,34 +59,10 @@ export default function PackageBrowser() {
         </div>
 
         <div class="order-3 min-w-0 md:order-none">
-          <ResultsToolbar />
-          <Switch>
-            <Match when={error()}>
-              <div role="alert" class="border border-edge p-4">
-                <h2 class="heading">Could not load packages</h2>
-                <p class="opacity-80">{error()}</p>
-                <div class="mt-3 flex flex-wrap items-center gap-x-4">
-                  <button
-                    type="button"
-                    class="border border-edge px-2 py-1 hover:bg-hover"
-                    onClick={() => refetch()}
-                  >
-                    Try again
-                  </button>
-                  <a class="link" href={docs.packages}>
-                    Read the package guide →
-                  </a>
-                </div>
-              </div>
-            </Match>
-
-            <Match when={catalog.loading}>
-              <p class="border border-edge p-4 opacity-50">
-                Fetching the published package collection.
-              </p>
-            </Match>
-
-            <Match when={!results().length}>
+          <ResultsToolbar result={props.result} />
+          <Show
+            when={props.result.count}
+            fallback={
               <div class="border border-edge p-4">
                 <h2 class="heading">No matching packages</h2>
                 <p class="opacity-80">
@@ -107,12 +83,10 @@ export default function PackageBrowser() {
                   </a>
                 </div>
               </div>
-            </Match>
-
-            <Match when={results().length}>
-              <PackageList />
-            </Match>
-          </Switch>
+            }
+          >
+            <PackageList result={props.result} />
+          </Show>
         </div>
       </div>
     </div>

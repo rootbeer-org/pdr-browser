@@ -3,11 +3,12 @@ import { cn } from "cn";
 import { usageModes } from "../catalog/commands.ts";
 import { defaultVersion } from "../catalog/versions.ts";
 import { docs } from "../config.ts";
-import { platform, selectVersion, version } from "../state/browser-state.ts";
+import { useBrowserState } from "../state/browser-state.ts";
 import { createClipboard } from "../state/clipboard.ts";
 import type { PackageView } from "../state/package-view.ts";
 
 export default function UsagePanel(props: { view: PackageView }) {
+  const { platform, selectVersion, version } = useBrowserState();
   const view = props.view;
   const clipboard = createClipboard();
 
