@@ -1,5 +1,6 @@
 import { For, Show } from "solid-js";
-import { platforms, type RootPackage } from "../catalog/types.ts";
+import { platforms, type PackageSummary } from "../catalog/types.ts";
+import { packageKind } from "../catalog/commands.ts";
 import { packageCommands } from "../catalog/search.ts";
 import { defaultVersion } from "../catalog/versions.ts";
 import { useBrowserState } from "../state/browser-state.ts";
@@ -7,16 +8,16 @@ import { packageHref } from "../state/links.ts";
 
 const KIND_LABELS = { command: "Command", library: "Library", app: "App" };
 
-export default function PackageRow(props: { pkg: RootPackage }) {
+export default function PackageRow(props: { pkg: PackageSummary }) {
   const { platform } = useBrowserState();
   const version = () => defaultVersion(props.pkg, platform());
   const commands = () => packageCommands(props.pkg, platform());
   const kind = () =>
-    (props.pkg.platforms[platform()] ?? Object.values(props.pkg.platforms)[0]).kind;
+    packageKind(props.pkg.outputs[platform()] ?? Object.values(props.pkg.outputs)[0]);
 
   /** Nearly every package builds everywhere, so only the exceptions are worth a line. */
   const limitedTo = () => {
-    const available = platforms.filter(({ id }) => props.pkg.platforms[id]);
+    const available = platforms.filter(({ id }) => props.pkg.default[id]);
     return available.length === platforms.length
       ? ""
       : `${available.map(({ short }) => short).join(" · ")} only`;
@@ -44,9 +45,16 @@ export default function PackageRow(props: { pkg: RootPackage }) {
         <Show when={limitedTo()}>
           <span>{limitedTo()}</span>
         </Show>
-        <a class="link ml-auto" href={props.pkg.homepage} target="_blank" rel="noopener noreferrer">
-          Homepage ↗
-        </a>
+        <Show when={props.pkg.homepage}>
+          <a
+            class="link ml-auto"
+            href={props.pkg.homepage}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Homepage ↗
+          </a>
+        </Show>
       </div>
     </article>
   );

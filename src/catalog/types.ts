@@ -1,74 +1,46 @@
-export interface CatalogSource {
-  url: string;
-  publicKey: string;
-}
-
 export type PackageKind = "command" | "library" | "app";
 
-export interface RootPlatform {
-  version: string;
-  kind: PackageKind;
-  commands: string[];
+export interface IndexOutput {
+  key: string;
+  manifest: string;
+  bins: string[];
+  apps: Record<string, string>;
 }
 
-export interface RootPackage {
+export interface IndexEntry {
   name: string;
-  aliases: string[];
   description: string;
   homepage: string;
   license: string;
+  aliases: string[];
   maintainers: string[];
-  added: number;
-  updated: number;
-  platforms: Record<string, RootPlatform>;
-  document: string;
+  added?: number;
+  updated?: number;
+  default: Record<string, string>;
+  versions: Record<string, Record<string, IndexOutput>>;
 }
 
-export interface Root {
-  packages: RootPackage[];
-  sequence: number;
+export interface PackageSummary extends Omit<IndexEntry, "versions"> {
+  outputs: Record<string, IndexOutput>;
 }
 
-export interface PackageDocument {
-  name: string;
-  versions: Record<string, DocumentVersion>;
+export interface IndexMetadata {
+  targets_version: number;
+  expires: string;
 }
 
-export interface DocumentVersion {
-  license: string;
-  revision: number;
-  platforms: Record<string, DocumentPlatform>;
+export interface CatalogSnapshot extends IndexMetadata {
+  packages: PackageSummary[];
 }
 
-export interface DocumentPlatform {
-  recipe: CatalogRecipe;
-  record: string;
-  published: number;
+export interface PackageSnapshot extends IndexMetadata {
+  pkg: IndexEntry;
 }
 
-/** Bare names defer their paths to the artifact; a map fixes them. */
-export type Bins = string[] | Record<string, string>;
-
-export interface CatalogRecipe {
-  bins?: Bins;
-  apps?: Record<string, string>;
-  source?: string;
-  build?: {
-    backend?: string;
-    url: string;
-    libraries?: string[];
-    dependencies?: (string | { package: string; kind: DependencyKind })[];
-  };
-}
-
-export type DependencyKind = "all" | "build" | "link" | "runtime" | "link_runtime";
-export interface PackageRecord {
-  signature: string;
-  system: string;
-  revision: number;
-  source: string;
-  receiptSha256: string;
-  published: number;
+export interface CatalogManifest {
+  format: 1;
+  dataPath: string;
+  names: string[];
 }
 
 export interface Platform {
@@ -82,9 +54,3 @@ export const platforms: Platform[] = [
   { id: "aarch64-linux", label: "Linux · ARM64", short: "Linux ARM64" },
   { id: "x86_64-linux", label: "Linux · x86-64", short: "Linux x86-64" },
 ];
-
-export interface PackageData {
-  pkg: RootPackage;
-  document: PackageDocument;
-  records: Record<string, PackageRecord>;
-}

@@ -1,4 +1,3 @@
-import type { CatalogRecipe } from "../catalog/types.ts";
 import { recipesUrl } from "../config.ts";
 
 export function packageHref(name: string, version = "", system = ""): string {
@@ -11,20 +10,4 @@ export function packageHref(name: string, version = "", system = ""): string {
 
 export function recipeHref(name: string): string {
   return `${recipesUrl}/blob/main/packages/${name}.lua`;
-}
-
-export function sourceHref(recipe: CatalogRecipe | undefined): string {
-  const release = recipe?.source?.match(/^github:([^@]+)@(.+)$/);
-  if (release) {
-    return `https://github.com/${release[1]}/releases/tag/${encodeURIComponent(release[2])}`;
-  }
-
-  const url = recipe?.build?.url;
-  if (!url) return "";
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:" || parsed.protocol === "http:" ? url : "";
-  } catch {
-    return "";
-  }
 }

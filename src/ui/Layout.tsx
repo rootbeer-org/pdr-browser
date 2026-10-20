@@ -1,4 +1,4 @@
-import { catalogHost, docs, recipesUrl } from "../config.ts";
+import { docs, recipesUrl } from "../config.ts";
 import type { ParentProps } from "solid-js";
 
 export default function Layout(props: ParentProps) {
@@ -32,7 +32,10 @@ export default function Layout(props: ParentProps) {
 
         <hr class="mt-8 mb-3 border-edge" />
         <footer class="flex flex-wrap items-baseline gap-x-4 uppercase opacity-50">
-          <span class="ml-auto">{catalogHost}</span>
+          <a class="link" href="/catalog.json" target="_blank" rel="noopener noreferrer">
+            Catalog JSON ↗
+          </a>
+          <span class="ml-auto">index.rbpkg.com</span>
         </footer>
       </main>
     </>

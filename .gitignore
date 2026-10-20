@@ -30,5 +30,7 @@ dist-ssr
 .nitro
 
 public/_catalog
+public/catalog.json
+public/packages/*/data.json
 
 .wrangler

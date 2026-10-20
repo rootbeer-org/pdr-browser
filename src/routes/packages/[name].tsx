@@ -44,20 +44,22 @@ export default function PackagePage() {
                     </Show>
                   </h2>
                   <p class="mt-1 opacity-80">{loaded.pkg.description}</p>
-                  <a
-                    class="link mt-2 inline-block"
-                    href={loaded.pkg.homepage}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Homepage ↗
-                  </a>
+                  <Show when={loaded.pkg.homepage}>
+                    <a
+                      class="link mt-2 inline-block"
+                      href={loaded.pkg.homepage}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Homepage ↗
+                    </a>
+                  </Show>
                 </div>
                 <label class="flex flex-col gap-y-1">
                   <span class="text-xs uppercase opacity-80">Platform</span>
                   <select
                     class="field"
-                    value={packagePlatform(loaded.document, platform(), version())}
+                    value={packagePlatform(loaded.pkg, platform(), version())}
                     onChange={(event) => filterPlatform(event.currentTarget.value)}
                   >
                     <For each={platforms}>

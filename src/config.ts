@@ -1,11 +1,3 @@
-import type { CatalogSource } from "./catalog/types.ts";
-
-export const catalogSource: CatalogSource = {
-  url: import.meta.env.VITE_PDR_URL,
-  publicKey: import.meta.env.VITE_CATALOG_PUBLIC_KEY,
-};
-
-export const catalogHost = new URL(catalogSource.url).hostname;
 export const recipesUrl = "https://github.com/rootbeer-org/pdr";
 const docsEndpoint = "https://rbpkg.com";
 
@@ -18,6 +10,5 @@ export const docs = {
   packageLocks: `${docsEndpoint}/guide/package-locks`,
   packageSources: `${docsEndpoint}/guide/package-sources`,
   packaging: `${docsEndpoint}/contributing/packaging`,
-  libraryDependencies: `${docsEndpoint}/contributing/packaging#library-dependencies`,
   home: docsEndpoint,
 };

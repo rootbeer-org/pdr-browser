@@ -1,27 +1,45 @@
 # PDR Browser
 
-[search.rbpkg.com](https://search.rbpkg.com) — Rootbeer package search.
-SolidStart, prerendered to static files and hosted on GitHub Pages.
+The package browser for [Rootbeer](https://rbpkg.com). Search packages, compare
+versions and platforms, and copy install commands.
 
-## Development
+**[Browse packages → search.rbpkg.com](https://search.rbpkg.com)**
 
-Use the Node.js and pnpm versions in `package.json`.
+Built with SolidStart and deployed to GitHub Pages. At build time,
+`rb drv catalog` verifies the signed package index and exports the data used to
+generate the site. Everything runs from static files, including search.
+
+## Run locally
+
+Install Node.js and pnpm at the versions in `package.json`, plus a recent `rb`
+with `drv catalog` support.
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-The first start fetches and verifies the catalog configured in `.env`. Run
-`PDR_REFRESH=1 pnpm dev` to check for updates. Builds always check for catalog
-changes and reuse the snapshot when unchanged.
+Set `RB=/path/to/rb` to use a different binary. The first run fetches the catalog;
+subsequent runs use the cached copy. To refresh it:
 
 ```sh
-pnpm format:check
-pnpm lint
-pnpm build
-pnpm preview
+PDR_REFRESH=1 pnpm dev
 ```
 
-`pnpm build` verifies package signatures and generates `.output/public/`.
-Search and version/platform selection run in the browser using static JSON.
+## Build and check
+
+```sh
+pnpm run format:check
+pnpm run lint
+node --test tests/*.test.ts
+pnpm run build
+pnpm run preview
+```
+
+Builds verify the current index and write the site to `.output/public/`. The
+index triggers a deployment after each signing.
+
+## JSON
+
+The same data is available at [`/catalog.json`](https://search.rbpkg.com/catalog.json)
+and `/packages/<name>/data.json`. Each package page links to its JSON.

@@ -1,6 +1,6 @@
 import { query } from "@solidjs/router";
 import { readSearch, searchPage } from "../catalog/search-options.ts";
-import type { PackageData, Root } from "../catalog/types.ts";
+import type { PackageSnapshot, CatalogSnapshot } from "../catalog/types.ts";
 
 async function readData<T>(file: string): Promise<T> {
   const path = `${import.meta.env.PDR_DATA_PATH}/${file}.json`;
@@ -14,8 +14,9 @@ async function readData<T>(file: string): Promise<T> {
   return response.json();
 }
 
-const findBrowserRoot = query(() => readData<Root>("index"), "catalog");
-const findRoot = () => (import.meta.env.SSR ? readData<Root>("index") : findBrowserRoot());
+const findBrowserRoot = query(() => readData<CatalogSnapshot>("index"), "catalog");
+const findRoot = () =>
+  import.meta.env.SSR ? readData<CatalogSnapshot>("index") : findBrowserRoot();
 
 export const findPackages = query(async (search: string) => {
   const root = await findRoot();
@@ -26,5 +27,5 @@ export const findPackage = query(async (name: string) => {
   const root = await findRoot();
   const pkg = root.packages.find((entry) => entry.name === name);
   if (!pkg) return null;
-  return readData<PackageData>(pkg.document);
+  return readData<PackageSnapshot>(pkg.name);
 }, "package");

@@ -1,4 +1,4 @@
-import { platforms, type RootPackage } from "./types.ts";
+import { platforms, type PackageSummary } from "./types.ts";
 import { matchesPackage, searchPackages } from "./search.ts";
 
 export type SortOrder = "relevance" | "name" | "name-desc";
@@ -22,7 +22,7 @@ export function readSearch(params: URLSearchParams) {
 export type SearchOptions = ReturnType<typeof readSearch>;
 export type SearchResult = ReturnType<typeof searchPage>;
 
-export function searchPage(packages: RootPackage[], options: SearchOptions) {
+export function searchPage(packages: PackageSummary[], options: SearchOptions) {
   const matched = searchPackages(packages, options.query, options.platform);
   if (options.sort === "name") matched.sort((a, b) => a.name.localeCompare(b.name));
   if (options.sort === "name-desc") matched.sort((a, b) => b.name.localeCompare(a.name));
@@ -37,7 +37,7 @@ export function searchPage(packages: RootPackage[], options: SearchOptions) {
     count: matched.length,
     queryCount: queryMatches.length,
     platformCounts: Object.fromEntries(
-      platforms.map(({ id }) => [id, queryMatches.filter((pkg) => pkg.platforms[id]).length]),
+      platforms.map(({ id }) => [id, queryMatches.filter((pkg) => pkg.default[id]).length]),
     ),
     page,
     pages,

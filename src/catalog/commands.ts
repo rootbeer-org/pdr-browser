@@ -1,4 +1,4 @@
-import type { CatalogRecipe, DependencyKind, PackageKind, RootPackage } from "./types.ts";
+import type { IndexOutput, PackageKind } from "./types.ts";
 
 export type UsageMode = "run" | "use" | "config";
 export type DetailMode = UsageMode | "bootstrap";
@@ -8,106 +8,46 @@ export interface SnippetRequest {
   version: string;
   isPinned: boolean;
   bin: string;
-}
-
-export interface PackageDependency {
-  request: string;
-  name: string;
-  version: string;
-  kind: string;
+  app: string;
 }
 
 const BOOTSTRAP_SNIPPET =
-  'sh -c "$(curl -fsSL https://rbpkg.com/rb.sh)"\nexport PATH="$HOME/.rootbeer/bin:$PATH"';
+  'sh -c "$(curl -fsSL https://rbpkg.com/rb.sh)"\neval "$("/opt/rb/profiles/$(id -u)/user/bin/rb" env)"';
 
-const DEPENDENCY_LABELS: Record<DependencyKind, string> = {
-  all: "Build / link",
-  build: "Build",
-  link: "Link",
-  runtime: "Runtime",
-  link_runtime: "Link / runtime",
-};
-
-export function binNames(recipe: CatalogRecipe): string[] {
-  const bins = recipe.bins ?? [];
-  return Array.isArray(bins) ? bins : Object.keys(bins);
+export function packageKind(output: IndexOutput | undefined): PackageKind {
+  if (Object.keys(output?.apps ?? {}).length) return "app";
+  if (output?.bins.length) return "command";
+  return "library";
 }
 
-export function packageKind(recipe: CatalogRecipe): PackageKind {
-  if (binNames(recipe).length) return "command";
-  if (recipe.build?.libraries?.length) return "library";
-  return "app";
+export function primaryCommand(name: string, output: IndexOutput): string {
+  return output.bins.includes(name) ? name : output.bins.length === 1 ? output.bins[0] : "";
 }
 
-export function primaryCommand(pkg: RootPackage, recipe: CatalogRecipe): string {
-  const bins = binNames(recipe);
-  return bins.includes(pkg.name) ? pkg.name : bins.length === 1 ? bins[0] : "";
-}
-
-export function usageModes(pkg: RootPackage, recipe: CatalogRecipe): [DetailMode, string][] {
-  const isRootbeer = pkg.name === "rootbeer";
+export function usageModes(name: string, output: IndexOutput): [DetailMode, string][] {
+  const isRootbeer = name === "rootbeer";
   return [
     ...(isRootbeer ? ([["bootstrap", "Install Rootbeer"]] as [DetailMode, string][]) : []),
     ["use", isRootbeer ? "Install with rb" : "Install"],
-    // An app bundle has no command to run once.
-    ...(binNames(recipe).length ? ([["run", "Run once"]] as [DetailMode, string][]) : []),
+    ...(output.bins.length || Object.keys(output.apps).length
+      ? ([["run", "Run once"]] as [DetailMode, string][])
+      : []),
     ["config", "Lua config"],
   ];
 }
 
-export function packageCommand(
-  pkg: RootPackage,
-  recipe: CatalogRecipe,
-  mode: UsageMode,
-  version = "",
-  bin = "",
-): string {
-  const request = version ? `${pkg.name}@${version}` : pkg.name;
-  if (mode === "config") {
-    return `local rb = require("rootbeer")\n\nrb.package(${JSON.stringify(request)})`;
-  }
-
-  const selectedBin =
-    mode === "run" && bin && bin !== primaryCommand(pkg, recipe) ? ` --bin ${quote(bin)}` : "";
-  return `rb ${mode}${selectedBin} ${quote(request)}`;
-}
-
-export function usageSnippet(
-  pkg: RootPackage,
-  recipe: CatalogRecipe,
-  request: SnippetRequest,
-): string {
+export function usageSnippet(name: string, output: IndexOutput, request: SnippetRequest): string {
   if (request.mode === "bootstrap") return BOOTSTRAP_SNIPPET;
-  if (packageKind(recipe) === "library") {
-    return `dependencies = { "${pkg.name}@${request.version}" }`;
+  const target = request.isPinned ? `${name}@${request.version}` : name;
+  if (request.mode === "config") return `rb.package(${JSON.stringify(target)})`;
+
+  let option = "";
+  if (request.mode === "run") {
+    if (request.app) option = ` --app ${quote(request.app)}`;
+    else if (output.bins.length > 1 && request.bin !== name)
+      option = ` --bin ${quote(request.bin)}`;
   }
-
-  const command = packageCommand(
-    pkg,
-    recipe,
-    request.mode,
-    request.isPinned ? request.version : "",
-    request.mode === "run" ? request.bin : "",
-  );
-
-  // The eval line puts commands on PATH; an app bundle has none.
-  const needsShell = request.mode === "use" && packageKind(recipe) === "command";
-  return needsShell ? `${command}\neval "$(rb env)"` : command;
-}
-
-export function packageDependencies(recipe: CatalogRecipe): PackageDependency[] {
-  return (recipe.build?.dependencies ?? []).map((dependency) => {
-    const request = typeof dependency === "string" ? dependency : dependency.package;
-    const kind = typeof dependency === "string" ? "all" : dependency.kind;
-    const separator = request.indexOf("@");
-
-    return {
-      request,
-      name: separator < 0 ? request : request.slice(0, separator),
-      version: separator < 0 ? "" : request.slice(separator + 1),
-      kind: DEPENDENCY_LABELS[kind],
-    };
-  });
+  return `rb ${request.mode} ${quote(target)}${option}`;
 }
 
 function quote(value: string): string {

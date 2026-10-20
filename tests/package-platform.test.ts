@@ -1,32 +1,35 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { availableVersions, packagePlatform, preferredVersion } from "../src/catalog/versions.ts";
-import type { PackageDocument, RootPackage } from "../src/catalog/types.ts";
+import { packageKind } from "../src/catalog/commands.ts";
+import { output, packageEntry } from "./catalog-fixture.ts";
 
-const entry = { recipe: {}, record: "", published: 0 };
-const document: PackageDocument = {
-  name: "example",
+const pkg = {
+  ...packageEntry(),
+  default: { "aarch64-macos": "1", "aarch64-linux": "2" },
   versions: {
-    "1": { license: "", revision: 1, platforms: { "aarch64-macos": entry } },
-    "2": { license: "", revision: 1, platforms: { "aarch64-linux": entry } },
+    "1": { "aarch64-macos": output },
+    "2": { "aarch64-linux": output },
   },
 };
 
 test("a pinned version chooses a platform that publishes it", () => {
-  assert.equal(packagePlatform(document, "", "2"), "aarch64-linux");
+  assert.equal(packagePlatform(pkg, "", "2"), "aarch64-linux");
 });
 
 test("explicit unsupported platforms stay selected so availability is honest", () => {
-  const system = packagePlatform(document, "x86_64-linux", "1");
+  const system = packagePlatform(pkg, "x86_64-linux", "1");
   assert.equal(system, "x86_64-linux");
-  assert.deepEqual(availableVersions(document, system), []);
+  assert.deepEqual(availableVersions(pkg, system), []);
 });
 
 test("split defaults resolve against the displayed platform", () => {
-  const pkg = {
-    platforms: { "aarch64-macos": { version: "1" }, "aarch64-linux": { version: "2" } },
-  } as RootPackage;
-  const system = packagePlatform(document);
-  assert.equal(preferredVersion(pkg, document, system), "1");
-  assert.equal(preferredVersion(pkg, document, packagePlatform(document, "aarch64-linux")), "2");
+  assert.equal(preferredVersion(pkg, packagePlatform(pkg)), "1");
+  assert.equal(preferredVersion(pkg, packagePlatform(pkg, "aarch64-linux")), "2");
+});
+
+test("apps take precedence over commands and empty exports are libraries", () => {
+  assert.equal(packageKind(output), "command");
+  assert.equal(packageKind({ ...output, apps: { "Tool.app": "Tool.app" } }), "app");
+  assert.equal(packageKind({ ...output, bins: [] }), "library");
 });

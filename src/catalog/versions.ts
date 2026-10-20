@@ -1,4 +1,4 @@
-import { platforms, type PackageDocument, type RootPackage } from "./types.ts";
+import { platforms, type IndexEntry } from "./types.ts";
 
 const natural = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
 
@@ -42,42 +42,39 @@ export function compareVersions(a: string, b: string): number {
 }
 
 /** Without a platform, the newest default any platform ships. */
-export function defaultVersion(pkg: RootPackage, system = ""): string {
-  if (system) return pkg.platforms[system]?.version ?? "";
-  return platformDefaults(pkg).sort((a, b) => compareVersions(b, a))[0] ?? "";
+export function defaultVersion(pkg: Pick<IndexEntry, "default">, system = ""): string {
+  if (system) return pkg.default[system] ?? "";
+  return Object.values(pkg.default).sort((a, b) => compareVersions(b, a))[0] ?? "";
 }
 
-export function hasSplitDefaults(pkg: RootPackage): boolean {
-  return new Set(platformDefaults(pkg)).size > 1;
+export function availableVersions(pkg: IndexEntry, system = ""): string[] {
+  const defaults = system ? [pkg.default[system]] : Object.values(pkg.default);
+  return (
+    Object.keys(pkg.versions)
+      .filter((version) =>
+        system
+          ? Object.hasOwn(pkg.versions[version], system)
+          : Object.keys(pkg.versions[version]).length > 0,
+      )
+      // Build hashes carry no chronology; prefer a default when release precedence ties.
+      .sort(
+        (a, b) =>
+          compareVersions(b, a) ||
+          Number(defaults.includes(b)) - Number(defaults.includes(a)) ||
+          b.localeCompare(a),
+      )
+  );
 }
 
-export function availableVersions(document: PackageDocument, system = ""): string[] {
-  const published = (version: string) => {
-    const entries = document.versions[version].platforms;
-    if (system) return entries[system]?.published ?? 0;
-    return Math.max(0, ...Object.values(entries).map((entry) => entry.published));
-  };
-
-  return Object.keys(document.versions)
-    .filter((version) => !system || Object.hasOwn(document.versions[version].platforms, system))
-    .sort((a, b) => compareVersions(b, a) || published(b) - published(a) || b.localeCompare(a));
-}
-
-export function preferredVersion(pkg: RootPackage, document: PackageDocument, system = ""): string {
-  const versions = availableVersions(document, system);
+export function preferredVersion(pkg: IndexEntry, system = ""): string {
+  const versions = availableVersions(pkg, system);
   const preferred = defaultVersion(pkg, system);
   return versions.includes(preferred) ? preferred : (versions[0] ?? "");
 }
 
-function platformDefaults(pkg: RootPackage): string[] {
-  return Object.values(pkg.platforms).map(({ version }) => version);
-}
-
-export function packagePlatform(document: PackageDocument, requested = "", version = ""): string {
+export function packagePlatform(pkg: IndexEntry, requested = "", version = ""): string {
   if (requested) return requested;
 
-  const entries = document.versions[version]
-    ? [document.versions[version]]
-    : Object.values(document.versions);
-  return platforms.find(({ id }) => entries.some((entry) => entry.platforms[id]))?.id ?? "";
+  const entries = pkg.versions[version] ? [pkg.versions[version]] : Object.values(pkg.versions);
+  return platforms.find(({ id }) => entries.some((entry) => entry[id]))?.id ?? "";
 }

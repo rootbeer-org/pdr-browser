@@ -1,58 +1,40 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { availableVersions } from "../src/catalog/versions.ts";
-import type { PackageDocument } from "../src/catalog/types.ts";
+import { output, packageEntry } from "./catalog-fixture.ts";
 
-function document(entries: [string, number, number?][]): PackageDocument {
-  return {
-    name: "example",
-    versions: Object.fromEntries(
-      entries.map(([version, macos, linux]) => [
-        version,
-        {
-          license: "",
-          revision: 1,
-          platforms: {
-            "aarch64-macos": { recipe: {}, record: "", published: macos },
-            ...(linux === undefined
-              ? {}
-              : { "aarch64-linux": { recipe: {}, record: "", published: linux } }),
-          },
-        },
-      ]),
-    ),
-  };
-}
+test("release precedence is numeric and releases precede prereleases", () => {
+  const pkg = packageEntry(["1.9.0", "1.10.0", "1.10.0-rc.2", "1.10.0-rc.10"]);
+  assert.deepEqual(availableVersions(pkg), ["1.10.0", "1.10.0-rc.10", "1.10.0-rc.2", "1.9.0"]);
+});
 
-test("nightly builds sort by publication time instead of commit hash", () => {
-  const versions = document([
-    ["0.1.0-main+ffff", 10],
-    ["0.1.0-main+aaaa", 30],
-    ["0.1.0-main+9999", 20],
+test("calendar versions and non-semver labels use natural order", () => {
+  assert.deepEqual(availableVersions(packageEntry(["2026-9-1", "2026-10-1", "2025-12-1"])), [
+    "2026-10-1",
+    "2026-9-1",
+    "2025-12-1",
   ]);
-  assert.deepEqual(availableVersions(versions, "aarch64-macos"), [
+  assert.deepEqual(availableVersions(packageEntry(["release2", "release10"])), [
+    "release10",
+    "release2",
+  ]);
+});
+
+test("equal-precedence builds prefer the selected platform's default without inventing dates", () => {
+  const pkg = packageEntry(["0.1.0-main+aaaa", "0.1.0-main+ffff", "0.1.0-main+9999"]);
+  pkg.default["aarch64-linux"] = "0.1.0-main+9999";
+  for (const entry of Object.values(pkg.versions)) entry["aarch64-linux"] = output;
+  assert.deepEqual(availableVersions(pkg, "aarch64-macos"), [
     "0.1.0-main+aaaa",
-    "0.1.0-main+9999",
     "0.1.0-main+ffff",
+    "0.1.0-main+9999",
   ]);
+  assert.equal(availableVersions(pkg, "aarch64-linux")[0], "0.1.0-main+9999");
 });
 
-test("nightly ordering uses publication dates for the selected platform", () => {
-  const versions = document([
-    ["1.0.0-main+a", 20, 10],
-    ["1.0.0-main+b", 10, 30],
-  ]);
-  assert.equal(availableVersions(versions, "aarch64-macos")[0], "1.0.0-main+a");
-  assert.equal(availableVersions(versions, "aarch64-linux")[0], "1.0.0-main+b");
-  assert.equal(availableVersions(versions)[0], "1.0.0-main+b");
-});
-
-test("release precedence remains numeric even when older versions are republished", () => {
-  const versions = document([
-    ["1.9.0", 40],
-    ["1.10.0", 10],
-    ["1.10.0-rc.2", 30],
-    ["1.10.0-rc.10", 20],
-  ]);
-  assert.deepEqual(availableVersions(versions), ["1.10.0", "1.10.0-rc.10", "1.10.0-rc.2", "1.9.0"]);
+test("retained versions remain visible even when they are not defaults", () => {
+  const pkg = packageEntry(["1.0", "2.0"]);
+  pkg.versions["3.0"] = { "x86_64-linux": output };
+  assert.deepEqual(availableVersions(pkg), ["3.0", "2.0", "1.0"]);
+  assert.deepEqual(availableVersions(pkg, "aarch64-macos"), ["2.0", "1.0"]);
 });
