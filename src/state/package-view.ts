@@ -12,7 +12,7 @@ import { useBrowserState } from "./browser-state.ts";
 export type PackageView = ReturnType<typeof createPackageView>;
 
 export function createPackageView({ pkg, targets_version, expires }: PackageSnapshot) {
-  const { platform: requestedPlatform, version } = useBrowserState();
+  const { system: requestedPlatform, version } = useBrowserState();
   const system = () => packagePlatform(pkg, requestedPlatform(), version());
   const [mode, setMode] = createSignal<DetailMode>(
     pkg.name === "rootbeer" && !version() ? "bootstrap" : "use",

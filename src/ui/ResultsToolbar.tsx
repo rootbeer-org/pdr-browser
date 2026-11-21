@@ -1,24 +1,33 @@
 import { Show } from "solid-js";
-import { platforms } from "../catalog/types.ts";
 import { useBrowserState, type SortOrder } from "../state/browser-state.ts";
 import type { SearchResult } from "../catalog/search-options.ts";
+import { KIND_LABELS, platformLabel } from "./labels.ts";
 
 export default function ResultsToolbar(props: { result: SearchResult }) {
-  const { clearFilters, order, platform, query, sort } = useBrowserState();
-  const platformLabel = () => platforms.find(({ id }) => id === platform())?.short ?? "";
+  const { clearFilters, kind, order, platform, query, sort } = useBrowserState();
 
   const status = () => `${props.result.count} ${props.result.count === 1 ? "package" : "packages"}`;
+  const filters = () =>
+    [
+      kind() && KIND_LABELS[kind() as keyof typeof KIND_LABELS],
+      platform() && platformLabel(platform()),
+    ]
+      .filter(Boolean)
+      .join(" · ");
 
   return (
     <div class="my-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
       <p role="status" aria-live="polite" class="tabular-nums">
         {status()}
-        <Show when={platform()}>
-          <span class="opacity-50"> · {platformLabel()}</span>
+        <Show when={props.result.count !== props.result.total}>
+          <span class="opacity-50"> of {props.result.total}</span>
+        </Show>
+        <Show when={filters()}>
+          <span class="opacity-50"> · {filters()}</span>
         </Show>
       </p>
 
-      <Show when={query() || platform()}>
+      <Show when={query() || platform() || kind()}>
         <button type="button" class="link" onClick={clearFilters}>
           Clear filters
         </button>
@@ -37,6 +46,8 @@ export default function ResultsToolbar(props: { result: SearchResult }) {
           </Show>
           <option value="name">Name A–Z</option>
           <option value="name-desc">Name Z–A</option>
+          <option value="added">Recently added</option>
+          <option value="updated">Recently updated</option>
         </select>
       </label>
     </div>

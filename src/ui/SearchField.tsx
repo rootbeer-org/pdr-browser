@@ -2,7 +2,7 @@ import { createEffect, createSignal, onCleanup } from "solid-js";
 import { useBrowserState } from "../state/browser-state.ts";
 
 export default function SearchField() {
-  const { query, search, platform, sort } = useBrowserState();
+  const { query, search, platform, kind, sort } = useBrowserState();
   const [draft, setDraft] = createSignal(query());
   const [timer, setTimer] = createSignal<ReturnType<typeof setTimeout>>();
   createEffect(() => setDraft(query()));
@@ -22,6 +22,7 @@ export default function SearchField() {
         Search packages
       </label>
       <input type="hidden" name="platform" value={platform()} />
+      <input type="hidden" name="kind" value={kind()} />
       <input type="hidden" name="sort" value={sort()} />
       <input
         id="package-query"
@@ -29,7 +30,7 @@ export default function SearchField() {
         type="search"
         value={draft()}
         maxlength={200}
-        placeholder="name, command, or description…"
+        placeholder="name, command, app, or description…"
         autocomplete="off"
         class="w-full border border-edge bg-page px-2 py-1 placeholder:opacity-40"
         onInput={(event) => {

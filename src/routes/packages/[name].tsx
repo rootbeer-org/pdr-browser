@@ -9,7 +9,7 @@ import PackageDetails from "../../ui/PackageDetails.tsx";
 
 export default function PackagePage() {
   const params = useParams<{ name: string }>();
-  const { platform, filterPlatform, version } = useBrowserState();
+  const { system, filterPlatform, version } = useBrowserState();
   const data = createAsync(() => findPackage(params.name));
 
   return (
@@ -59,7 +59,7 @@ export default function PackagePage() {
                   <span class="text-xs uppercase opacity-80">Platform</span>
                   <select
                     class="field"
-                    value={packagePlatform(loaded.pkg, platform(), version())}
+                    value={packagePlatform(loaded.pkg, system(), version())}
                     onChange={(event) => filterPlatform(event.currentTarget.value)}
                   >
                     <For each={platforms}>

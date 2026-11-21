@@ -9,13 +9,11 @@ import UsagePanel from "./UsagePanel.tsx";
 import VersionTable from "./VersionTable.tsx";
 
 export default function PackageDetails(props: PackageSnapshot) {
-  const { platform, version } = useBrowserState();
+  const { system, version } = useBrowserState();
   return (
     <div class="border-t border-edge px-3 py-3">
       <Show
-        when={
-          availableVersions(props.pkg, packagePlatform(props.pkg, platform(), version())).length
-        }
+        when={availableVersions(props.pkg, packagePlatform(props.pkg, system(), version())).length}
         fallback={<p class="opacity-80">No published versions for this platform.</p>}
       >
         <Details {...props} />
