@@ -5,12 +5,17 @@ export interface IndexOutput {
   manifest: string;
   bins: string[];
   apps: Record<string, string>;
+  build?: string;
+  tag?: string;
+  runtime_dependencies: string[];
+  host: string[];
 }
 
 export interface IndexEntry {
   name: string;
   description: string;
   homepage: string;
+  repository?: string;
   license: string;
   aliases: string[];
   maintainers: string[];

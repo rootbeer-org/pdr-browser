@@ -7,7 +7,16 @@ interface Props {
   description?: string;
 }
 
-const { title, description = "Search and explore Rootbeer packages" } = Astro.props;
+const { title, description = "Packages you can install with Rootbeer" } = Astro.props;
+
+const guides = [
+  [docs.runTool, "Run a tool"],
+  [docs.keepInstalled, "Install for your user"],
+  [docs.declareInConfig, "Manage with Lua"],
+  [docs.packageLocks, "Updates and offline use"],
+  [docs.packageSources, "Other package sources"],
+  [docs.packaging, "Contribute a package"],
+];
 ---
 
 <html lang="en">
@@ -20,38 +29,52 @@ const { title, description = "Search and explore Rootbeer packages" } = Astro.pr
   </head>
   <body>
     <a
-      href="#catalog-content"
-      class="sr-only focus:not-sr-only focus:absolute focus:m-2 focus:border focus:border-edge focus:bg-panel focus:px-2 focus:py-1"
+      href="#content"
+      class="sr-only focus:not-sr-only focus:absolute focus:m-2 focus:bg-bg focus:px-2 focus:py-1"
     >
-      Skip to packages
+      Skip to content
     </a>
-    <main class="mx-auto my-4 w-full max-w-6xl flex-1 border border-edge bg-panel p-4">
-      <header class="flex flex-col gap-x-4 uppercase sm:flex-row sm:items-baseline">
-        <h1 class="font-bold tracking-wide">
-          <a href="/">Rootbeer Packages</a>
-        </h1>
-        <nav class="flex flex-wrap gap-x-4 sm:ml-auto" aria-label="Site">
+    <header class="border-b border-border">
+      <div class="mx-auto flex h-12 max-w-5xl items-center gap-4 px-4">
+        <a class="font-bold" href="/">
+          Rootbeer Packages
+        </a>
+        <nav class="ml-auto flex gap-4" aria-label="Site">
           <a class="link" href={docs.home}>
             Docs
           </a>
-          <a class="link" href={recipesUrl} target="_blank" rel="noopener noreferrer">
-            PDR
+          <a class="link" href={recipesUrl}>
+            Recipes
           </a>
         </nav>
-      </header>
-      <hr class="my-3 border-edge" />
-
-      <div id="catalog-content" tabindex="-1">
-        <slot />
       </div>
+    </header>
 
-      <hr class="mt-8 mb-3 border-edge" />
-      <footer class="flex flex-wrap items-baseline gap-x-4 uppercase opacity-50">
-        <a class="link" href="/catalog.json" target="_blank" rel="noopener noreferrer">
-          Catalog JSON ↗
-        </a>
-        <span class="ml-auto">index.rbpkg.com</span>
-      </footer>
+    <main id="content" tabindex="-1" class="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+      <slot />
     </main>
+
+    <footer class="border-t border-border text-muted">
+      <div class="mx-auto flex max-w-5xl flex-wrap gap-x-6 gap-y-4 px-4 py-6">
+        <nav aria-label="Guides">
+          <h2 class="mb-2 heading">Guides</h2>
+          <ul class="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+            {guides.map(([href, label]) => (
+              <li>
+                <a class="link" href={href}>
+                  {label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <nav class="sm:ml-auto" aria-label="Data">
+          <h2 class="mb-2 heading">Data</h2>
+          <a class="link" href="/catalog.json">
+            catalog.json
+          </a>
+        </nav>
+      </div>
+    </footer>
   </body>
 </html>

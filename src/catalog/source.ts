@@ -4,7 +4,8 @@ import type { IndexEntry, IndexMetadata, IndexOutput, PackageSummary } from "./t
 
 const execute = promisify(execFile);
 
-type ExportOutput = Omit<IndexOutput, "bins" | "apps"> & Partial<IndexOutput>;
+type ExportOutput = Omit<IndexOutput, "bins" | "apps" | "runtime_dependencies" | "host"> &
+  Partial<IndexOutput>;
 
 interface CatalogExport extends IndexMetadata {
   packages: Record<
@@ -31,7 +32,13 @@ export function parseCatalog(json: string): Catalog {
         Object.fromEntries(
           Object.entries(outputs).map(([system, output]) => [
             system,
-            { ...output, bins: output.bins ?? [], apps: output.apps ?? {} },
+            {
+              ...output,
+              bins: output.bins ?? [],
+              apps: output.apps ?? {},
+              runtime_dependencies: output.runtime_dependencies ?? [],
+              host: output.host ?? [],
+            },
           ]),
         ),
       ]),

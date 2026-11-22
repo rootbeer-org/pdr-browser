@@ -1,34 +1,24 @@
-import { For, Match, Show, Switch } from "solid-js";
+import { For, Show } from "solid-js";
 import { usageModes } from "#/catalog/commands.ts";
 import { defaultVersion } from "#/catalog/versions.ts";
 import { createClipboard } from "#/lib/clipboard.ts";
 import type { PackageView } from "#/lib/package-view.ts";
 import { urlState } from "#/lib/url-state.ts";
-import { docs } from "#/site.ts";
-import ProvenancePanel from "./provenance-panel.tsx";
 
 export default function UsagePanel(props: { view: PackageView }) {
   const { update, version } = urlState;
   const view = props.view;
   const clipboard = createClipboard();
-  const isApp = () => view.apps().length > 0;
-  const isLibrary = () => !isApp() && !view.output().bins.length;
 
   return (
-    <section class="flex min-w-0 flex-col gap-y-3" aria-label={`Use ${view.pkg.name}`}>
-      <h3 class="font-bold uppercase">{isLibrary() ? "Use this library" : "Use this package"}</h3>
+    <section class="flex min-w-0 flex-col gap-3" aria-label={`Use ${view.pkg.name}`}>
+      <h2 class="heading">Usage</h2>
       <fieldset>
-        <legend class="sr-only">Use this package</legend>
+        <legend class="sr-only">Usage</legend>
         <div class="flex flex-wrap">
           <For each={usageModes(view.pkg.name, view.output())}>
             {([id, label]) => (
-              <label
-                class="-ml-px cursor-pointer border px-2 py-1 first:ml-0 hover:bg-hover has-[:focus-visible]:relative has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent"
-                classList={{
-                  "border-edge": view.mode() !== id,
-                  "relative border-accent bg-accent-soft font-bold text-accent": view.mode() === id,
-                }}
-              >
+              <label class="toggle">
                 <input
                   type="radio"
                   name={`usage-${view.pkg.name}`}
@@ -45,11 +35,11 @@ export default function UsagePanel(props: { view: PackageView }) {
       </fieldset>
 
       <Show when={view.mode() !== "bootstrap"}>
-        <div class="flex flex-wrap gap-x-4 gap-y-2">
-          <label class="flex min-w-0 flex-1 flex-col gap-y-1">
-            <span class="text-xs uppercase opacity-80">Version</span>
+        <div class="flex flex-wrap gap-2">
+          <label class="flex min-w-0 flex-1 flex-col gap-1">
+            <span class="heading">Version</span>
             <select
-              class="w-full field"
+              class="select w-full"
               value={version()}
               onChange={(event) => update({ version: event.currentTarget.value })}
             >
@@ -68,10 +58,10 @@ export default function UsagePanel(props: { view: PackageView }) {
             </select>
           </label>
           <Show when={view.mode() === "run" && view.runTargets().length > 1}>
-            <label class="flex min-w-0 flex-1 flex-col gap-y-1">
-              <span class="text-xs uppercase opacity-80">Command or app</span>
+            <label class="flex min-w-0 flex-1 flex-col gap-1">
+              <span class="heading">Command or app</span>
               <select
-                class="w-full field"
+                class="select w-full"
                 value={view.runTarget()?.id}
                 onChange={(event) => view.selectRunTarget(event.currentTarget.value)}
               >
@@ -88,86 +78,37 @@ export default function UsagePanel(props: { view: PackageView }) {
         </div>
       </Show>
 
-      <Show when={!view.isInvalidVersion()}>
-        <ProvenancePanel view={view} />
-      </Show>
       <Show
         when={view.mode() === "bootstrap" || !view.isInvalidVersion()}
         fallback={
-          <p role="alert" class="border border-edge px-2 py-1 opacity-80">
+          <p role="alert" class="border border-accent bg-accent-bg px-2 py-2">
             Version {version()} is not available on this platform. Choose an available version to
             see its install command.
           </p>
         }
       >
-        <div class="border border-edge bg-inset">
-          <div class="flex items-center justify-between gap-3 border-b border-edge px-3 py-2">
-            <span class="text-xs uppercase opacity-80">
-              {view.mode() === "config" ? "init.lua" : "Terminal"}
-            </span>
-            <button
-              type="button"
-              class="shrink-0 border border-accent bg-accent-soft px-3 py-1.5 font-bold text-accent hover:bg-hover"
-              aria-label={`Copy ${view.mode()} instructions for ${view.pkg.name}`}
-              onClick={() => clipboard.copy(view.snippet())}
-            >
-              {clipboard.isCopied(view.snippet()) ? "Copied" : "Copy"}
-            </button>
-          </div>
-          <pre class="overflow-x-auto p-4 text-base leading-relaxed">
+        <div class="flex items-start border border-border bg-surface">
+          <pre class="min-w-0 flex-1 overflow-x-auto p-3">
             <code>{view.snippet()}</code>
           </pre>
+          <button
+            type="button"
+            class="m-1 button bg-bg"
+            aria-label={`Copy ${view.mode()} instructions for ${view.pkg.name}`}
+            onClick={() => clipboard.copy(view.snippet())}
+          >
+            {clipboard.isCopied(view.snippet()) ? "Copied" : "Copy"}
+          </button>
         </div>
       </Show>
       <span role="status" class="sr-only">
         {clipboard.isCopied(view.snippet()) ? "Copied to clipboard." : ""}
       </span>
       <Show when={clipboard.isFailed(view.snippet())}>
-        <p role="status" class="opacity-80">
+        <p role="status" class="text-muted">
           Could not copy. Select and copy the command above.
         </p>
       </Show>
-
-      <Switch>
-        <Match when={view.mode() === "bootstrap"}>
-          <p class="opacity-80">Install the latest Rootbeer nightly.</p>
-        </Match>
-        <Match when={view.mode() === "config"}>
-          <p class="opacity-80">
-            Add to <code>init.lua</code>, then run <code>rb apply</code>.
-          </p>
-        </Match>
-        <Match when={view.mode() === "run" && view.runTarget()?.isApp}>
-          <p class="opacity-80">
-            Open <code>{view.runTarget()?.name}</code> from the verified package store without
-            creating an Applications link.
-          </p>
-        </Match>
-        <Match when={view.mode() === "run"}>
-          <p class="opacity-80">
-            Run <code>{view.runTarget()?.name}</code> without adding it to your shell. Append{" "}
-            <code>--</code> followed by any arguments for the command.
-          </p>
-        </Match>
-        <Match when={isApp()}>
-          <p class="opacity-80">
-            Install this package's app bundles for your user. Rootbeer links them into your
-            Applications folder.
-          </p>
-        </Match>
-        <Match when={isLibrary()}>
-          <p class="opacity-80">This library exports no commands or app bundles.</p>
-        </Match>
-        <Match when={view.mode() === "use"}>
-          <p class="opacity-80">
-            Install <code>{view.pkg.name}</code> for your user. Run <code>eval "$(rb env)"</code> to
-            make its commands available in your current shell.
-          </p>
-        </Match>
-      </Switch>
-      <a class="link" href={view.mode() === "bootstrap" ? docs.gettingStarted : docs.packages}>
-        Usage guide →
-      </a>
     </section>
   );
 }

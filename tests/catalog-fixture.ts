@@ -5,6 +5,8 @@ export const output: IndexOutput = {
   manifest: `sha256:${"1".repeat(64)}`,
   bins: ["tool"],
   apps: {},
+  runtime_dependencies: [],
+  host: [],
 };
 
 export function packageEntry(versions = ["1.0.0"]): IndexEntry {

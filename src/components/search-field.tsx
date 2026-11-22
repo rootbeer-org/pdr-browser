@@ -14,7 +14,7 @@ export default function SearchField() {
         update({ q: new FormData(event.currentTarget).get("q") as string });
       }}
     >
-      <label class="heading" for="package-query">
+      <label class="sr-only" for="package-query">
         Search packages
       </label>
       <input
@@ -23,9 +23,9 @@ export default function SearchField() {
         type="search"
         value={options().query}
         maxlength={200}
-        placeholder="name, command, app, or description…"
+        placeholder="Search by name, command, app, or description"
         autocomplete="off"
-        class="w-full border border-edge bg-page px-2 py-1 placeholder:opacity-40"
+        class="field w-full"
         onInput={(event) => {
           const value = event.currentTarget.value;
           clearTimeout(timer);

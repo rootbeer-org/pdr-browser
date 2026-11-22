@@ -1,59 +1,90 @@
-import { Show } from "solid-js";
-import { KIND_LABELS, platformLabel, type SearchResult } from "#/catalog/search.ts";
+import { For, Show } from "solid-js";
+import {
+  ALL_PLATFORMS,
+  KINDS,
+  KIND_LABELS,
+  platformLabel,
+  type SearchResult,
+} from "#/catalog/search.ts";
+import { platforms } from "#/catalog/types.ts";
 import { urlState } from "#/lib/url-state.ts";
+
+const KIND_OPTIONS = [
+  { id: "", label: "All types" },
+  ...KINDS.map((id) => ({ id, label: KIND_LABELS[id] })),
+];
+const PLATFORM_OPTIONS = ["", ALL_PLATFORMS, ...platforms.map(({ id }) => id)].map((id) => ({
+  id,
+  label: platformLabel(id),
+}));
 
 export default function ResultsToolbar(props: { result: SearchResult }) {
   const { options, isFiltered, update } = urlState;
-  const status = () => `${props.result.count} ${props.result.count === 1 ? "package" : "packages"}`;
-  const filters = () => {
-    const { kind, platform } = options();
-    return [kind && KIND_LABELS[kind], platform && platformLabel(platform)]
-      .filter(Boolean)
-      .join(" · ");
-  };
 
   return (
-    <div class="my-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-      <p role="status" aria-live="polite" class="tabular-nums">
-        {status()}
-        <Show when={props.result.count !== props.result.total}>
-          <span class="opacity-50"> of {props.result.total}</span>
+    <div class="mt-2 grid grid-flow-dense grid-cols-2 items-center gap-2 sm:flex">
+      <select
+        aria-label="Package type"
+        class="select"
+        value={options().kind}
+        onChange={(event) => update({ kind: event.currentTarget.value })}
+      >
+        <For each={KIND_OPTIONS}>
+          {({ id, label }) => (
+            <option value={id}>
+              {label} {id && props.result.kindCounts[id]}
+            </option>
+          )}
+        </For>
+      </select>
+      <select
+        aria-label="Platform"
+        class="col-span-2 select"
+        value={options().platform}
+        onChange={(event) => update({ platform: event.currentTarget.value })}
+      >
+        <For each={PLATFORM_OPTIONS}>
+          {({ id, label }) => (
+            <option value={id}>
+              {label} {id && props.result.platformCounts[id]}
+            </option>
+          )}
+        </For>
+      </select>
+      <select
+        aria-label="Sort"
+        class="select"
+        value={options().sort}
+        onChange={(event) => {
+          const sort = event.currentTarget.value;
+          update({ sort: sort === "relevance" ? "" : sort });
+        }}
+      >
+        <Show when={options().query}>
+          <option value="relevance">Relevance</option>
         </Show>
-        <Show when={filters()}>
-          <span class="opacity-50"> · {filters()}</span>
+        <option value="name">Name A–Z</option>
+        <option value="name-desc">Name Z–A</option>
+        <option value="added">Recently added</option>
+        <option value="updated">Recently updated</option>
+      </select>
+
+      <div class="col-span-2 flex justify-end gap-2 sm:ml-auto">
+        <p role="status" aria-live="polite" class="text-muted tabular-nums">
+          {props.result.count === props.result.total
+            ? `${props.result.total} packages`
+            : `${props.result.count} of ${props.result.total}`}
+        </p>
+        <Show when={isFiltered()}>
+          <button
+            type="button"
+            class="link"
+            onClick={() => update({ q: "", platform: "", kind: "" })}
+          >
+            Clear
+          </button>
         </Show>
-      </p>
-
-      <Show when={isFiltered()}>
-        <button
-          type="button"
-          class="link"
-          onClick={() => update({ q: "", platform: "", kind: "" })}
-        >
-          Clear filters
-        </button>
-      </Show>
-
-      <label class="ml-auto flex items-baseline gap-x-2 opacity-80">
-        Sort
-        <select
-          aria-label="Sort packages"
-          class="field"
-          value={options().sort}
-          onChange={(event) => {
-            const sort = event.currentTarget.value;
-            update({ sort: sort === "relevance" ? "" : sort });
-          }}
-        >
-          <Show when={options().query}>
-            <option value="relevance">Relevance</option>
-          </Show>
-          <option value="name">Name A–Z</option>
-          <option value="name-desc">Name Z–A</option>
-          <option value="added">Recently added</option>
-          <option value="updated">Recently updated</option>
-        </select>
-      </label>
+      </div>
     </div>
   );
 }

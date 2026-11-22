@@ -7,65 +7,57 @@ export default function ProvenancePanel(props: { view: PackageView }) {
   const view = props.view;
   const published = () => platforms.filter(({ id }) => view.entry()[id]);
   return (
-    <details class="min-w-0 text-xs">
-      <summary class="w-fit cursor-pointer hover:text-accent">
-        <span>Signed index · version {view.targets_version}</span>
-        <span class="ml-2 underline decoration-edge underline-offset-4">Details</span>
-      </summary>
-      <p class="mt-3 opacity-80">rb verifies every download against the signed index.</p>
-      <p class="mt-2 opacity-60">Index metadata expires {view.expires.slice(0, 10)}.</p>
-      <For each={published()}>
-        {(platform) => {
-          const output = () => view.entry()[platform.id];
-          return (
-            <section class="mt-4 min-w-0" aria-label={`${platform.id} provenance`}>
-              <h4 class="font-bold">
-                {platform.short} · {view.selectedVersion()}
-              </h4>
-              <dl class="mt-3 grid min-w-0 gap-4 border-l border-edge pl-3">
-                <VerificationValue label="Store key" value={output().key} />
-                <VerificationValue label="Manifest digest" value={output().manifest} />
-                <VerificationValue
+    <details class="mt-8 text-xs text-muted">
+      <summary class="w-fit cursor-pointer hover:text-accent">Verification details</summary>
+      <p class="mt-2">
+        rb checks every download against these values from the signed index, version{" "}
+        {view.targets_version}, which expires {view.expires.slice(0, 10)}.
+      </p>
+      <dl class="mt-2 grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-1">
+        <For each={published()}>
+          {(platform) => {
+            const output = () => view.entry()[platform.id];
+            return (
+              <>
+                <dt class="col-span-3 mt-2 font-bold text-fg">
+                  {platform.short} {view.selectedVersion()}
+                </dt>
+                <Value label="Store key" value={output().key} />
+                <Value label="Manifest digest" value={output().manifest} />
+                <Value
                   label="OCI reference"
                   value={`ghcr.io/rootbeer-org/store/${view.pkg.name}:${output().key}`}
                 />
-              </dl>
-            </section>
-          );
-        }}
-      </For>
+              </>
+            );
+          }}
+        </For>
+      </dl>
     </details>
   );
 }
 
-function VerificationValue(props: { label: string; value: string }) {
+function Value(props: { label: string; value: string }) {
   const clipboard = createClipboard();
-  const isCopied = () => clipboard.isCopied(props.value);
-  const isFailed = () => clipboard.isFailed(props.value);
-
   return (
-    <div class="min-w-0">
-      <dt class="mb-1 flex items-baseline gap-3 text-xs">
-        <span class="opacity-60">{props.label}</span>
+    <>
+      <dt>{props.label}</dt>
+      <dd class="min-w-0 overflow-x-auto whitespace-nowrap">
+        <code class="text-fg">{props.value}</code>
+      </dd>
+      <dd>
         <button
           type="button"
-          class="shrink-0 link"
+          class="link"
           aria-label={`Copy ${props.label.toLowerCase()}`}
           onClick={() => clipboard.copy(props.value)}
         >
-          {isCopied() ? "Copied" : "Copy"}
+          {clipboard.isCopied(props.value) ? "Copied" : "Copy"}
         </button>
-      </dt>
-      <dd>
-        <code class="block overflow-x-auto pb-1 text-xs whitespace-nowrap">{props.value}</code>
-        <span role="status" class={isFailed() ? "text-xs opacity-80" : "sr-only"}>
-          {isFailed()
-            ? "Could not copy. Select and copy the value above."
-            : isCopied()
-              ? "Copied to clipboard."
-              : ""}
+        <span role="status" class="sr-only">
+          {clipboard.isFailed(props.value) ? "Could not copy." : ""}
         </span>
       </dd>
-    </div>
+    </>
   );
 }

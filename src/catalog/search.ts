@@ -19,7 +19,7 @@ const SORTS: SortOrder[] = ["name", "name-desc", "added", "updated"];
 
 export function platformLabel(id: string): string {
   if (!id) return "Any platform";
-  if (id === ALL_PLATFORMS) return "All platforms";
+  if (id === ALL_PLATFORMS) return "Every platform";
   return platforms.find((platform) => platform.id === id)?.short ?? id;
 }
 

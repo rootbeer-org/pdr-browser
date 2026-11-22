@@ -6,22 +6,34 @@ import Page from "#/layouts/page.astro";
 import { getCollection, getEntry } from "astro:content";
 
 export const getStaticPaths = (async () => {
-  const packages = await getCollection("packages");
-  return packages.map(({ id, data }) => ({ params: { name: id }, props: { pkg: data } }));
+  const packages = (await getCollection("packages")).map(({ data }) => data);
+  const usedBy = new Map<string, Set<string>>();
+  for (const pkg of packages) {
+    for (const [system, version] of Object.entries(pkg.default)) {
+      for (const dependency of pkg.versions[version][system].runtime_dependencies) {
+        usedBy.set(dependency, (usedBy.get(dependency) ?? new Set()).add(pkg.name));
+      }
+    }
+  }
+
+  return packages.map((pkg) => ({
+    params: { name: pkg.name },
+    props: { pkg, usedBy: [...(usedBy.get(pkg.name) ?? [])].sort() },
+  }));
 }) satisfies GetStaticPaths;
 
-const { pkg } = Astro.props;
+const { pkg, usedBy } = Astro.props;
 const { targets_version, expires } = (await getEntry("catalog", "current"))!.data;
 ---
 
 <Page title={`${pkg.name} · Rootbeer Packages`} description={pkg.description}>
-  <a class="link" href="/">
-    Search packages
-  </a>
-  <article class="mt-4 border border-edge">
-    <PackageDetails client:load pkg={pkg} targets_version={targets_version} expires={expires} />
-    <div class="px-3 pb-3">
-      <VersionTable pkg={pkg} />
-    </div>
-  </article>
+  <PackageDetails
+    client:load
+    pkg={pkg}
+    usedBy={usedBy}
+    targets_version={targets_version}
+    expires={expires}
+  >
+    <VersionTable pkg={pkg} />
+  </PackageDetails>
 </Page>
