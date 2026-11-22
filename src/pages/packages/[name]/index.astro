@@ -1,0 +1,27 @@
+---
+import type { GetStaticPaths } from "astro";
+import PackageDetails from "#/components/package-details.tsx";
+import VersionTable from "#/components/version-table.astro";
+import Page from "#/layouts/page.astro";
+import { getCollection, getEntry } from "astro:content";
+
+export const getStaticPaths = (async () => {
+  const packages = await getCollection("packages");
+  return packages.map(({ id, data }) => ({ params: { name: id }, props: { pkg: data } }));
+}) satisfies GetStaticPaths;
+
+const { pkg } = Astro.props;
+const { targets_version, expires } = (await getEntry("catalog", "current"))!.data;
+---
+
+<Page title={`${pkg.name} · Rootbeer Packages`} description={pkg.description}>
+  <a class="link" href="/">
+    Search packages
+  </a>
+  <article class="mt-4 border border-edge">
+    <PackageDetails client:load pkg={pkg} targets_version={targets_version} expires={expires} />
+    <div class="px-3 pb-3">
+      <VersionTable pkg={pkg} />
+    </div>
+  </article>
+</Page>

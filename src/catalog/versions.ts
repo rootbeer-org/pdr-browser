@@ -5,7 +5,7 @@ const natural = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
 const CALENDAR_PATTERN = /^\d{4}-\d{1,2}(?:-\d{1,2})?$/;
 const SEMVER_PATTERN = /^v?(\d+(?:\.\d+)*)(?:-([\da-z.-]+))?(?:\+[\da-z.-]+)?$/i;
 
-export function compareVersions(a: string, b: string): number {
+function compareVersions(a: string, b: string): number {
   if (CALENDAR_PATTERN.test(a) && CALENDAR_PATTERN.test(b)) return natural.compare(a, b);
 
   const left = a.match(SEMVER_PATTERN);
@@ -41,7 +41,6 @@ export function compareVersions(a: string, b: string): number {
   return 0;
 }
 
-/** Without a platform, the newest default any platform ships. */
 export function defaultVersion(pkg: Pick<IndexEntry, "default">, system = ""): string {
   if (system) return pkg.default[system] ?? "";
   return Object.values(pkg.default).sort((a, b) => compareVersions(b, a))[0] ?? "";
@@ -49,21 +48,18 @@ export function defaultVersion(pkg: Pick<IndexEntry, "default">, system = ""): s
 
 export function availableVersions(pkg: IndexEntry, system = ""): string[] {
   const defaults = system ? [pkg.default[system]] : Object.values(pkg.default);
-  return (
-    Object.keys(pkg.versions)
-      .filter((version) =>
-        system
-          ? Object.hasOwn(pkg.versions[version], system)
-          : Object.keys(pkg.versions[version]).length > 0,
-      )
-      // Build hashes carry no chronology; prefer a default when release precedence ties.
-      .sort(
-        (a, b) =>
-          compareVersions(b, a) ||
-          Number(defaults.includes(b)) - Number(defaults.includes(a)) ||
-          b.localeCompare(a),
-      )
-  );
+  return Object.keys(pkg.versions)
+    .filter((version) =>
+      system
+        ? Object.hasOwn(pkg.versions[version], system)
+        : Object.keys(pkg.versions[version]).length > 0,
+    )
+    .sort(
+      (a, b) =>
+        compareVersions(b, a) ||
+        Number(defaults.includes(b)) - Number(defaults.includes(a)) ||
+        b.localeCompare(a),
+    );
 }
 
 export function preferredVersion(pkg: IndexEntry, system = ""): string {

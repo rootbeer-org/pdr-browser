@@ -1,4 +1,8 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": []
+  "astro": true,
+  "sortTailwindcss": {
+    "stylesheet": "./src/styles.css"
+  },
+  "ignorePatterns": [".astro", ".cache", "dist"]
 }

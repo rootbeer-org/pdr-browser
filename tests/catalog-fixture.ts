@@ -1,4 +1,4 @@
-import type { IndexEntry, IndexOutput } from "../src/catalog/types.ts";
+import type { IndexEntry, IndexOutput } from "#/catalog/types.ts";
 
 export const output: IndexOutput = {
   key: "a".repeat(32),

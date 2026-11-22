@@ -1,0 +1,15 @@
+---
+import { getCollection, getEntry } from "astro:content";
+import PackageSearch from "#/components/package-search.tsx";
+import Page from "#/layouts/page.astro";
+import { readSearch, searchPage } from "#/catalog/search.ts";
+import { summarize } from "#/catalog/source.ts";
+
+const { targets_version } = (await getEntry("catalog", "current"))!.data;
+const packages = summarize((await getCollection("packages")).map(({ data }) => data));
+const initial = searchPage(packages, readSearch(new URLSearchParams()));
+---
+
+<Page title="Rootbeer Packages">
+  <PackageSearch client:load initial={initial} indexHref={`/search.json?v=${targets_version}`} />
+</Page>

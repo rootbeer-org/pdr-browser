@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { availableVersions } from "../src/catalog/versions.ts";
+import { availableVersions } from "#/catalog/versions.ts";
 import { output, packageEntry } from "./catalog-fixture.ts";
 
 test("release precedence is numeric and releases precede prereleases", () => {

@@ -1,0 +1,71 @@
+---
+import { platforms, type IndexEntry } from "#/catalog/types.ts";
+import { availableVersions } from "#/catalog/versions.ts";
+import { packageHref } from "#/site.ts";
+
+interface Props {
+  pkg: IndexEntry;
+}
+
+const { pkg } = Astro.props;
+const versions = availableVersions(pkg);
+---
+
+<details class="mt-6 border-t border-edge pt-4" aria-label={`${pkg.name} versions`}>
+  <summary class="w-fit cursor-pointer hover:text-accent">
+    <span class="font-bold uppercase">Version history</span>
+    <span class="ml-2 tabular-nums opacity-70">· {versions.length}</span>
+  </summary>
+  <p class="mt-3 mb-2 text-xs opacity-70">Newest releases first · Defaults marked per platform</p>
+  {versions.some((version) => version.includes("+")) && (
+    <p class="mb-2 text-xs opacity-70">
+      Build hashes have no publication dates; equivalent releases show defaults first.
+    </p>
+  )}
+  <div class="max-h-72 overflow-auto border border-edge">
+    <table class="w-full border-collapse">
+      <thead class="sticky top-0 bg-page uppercase">
+        <tr class="border-b border-edge">
+          <th class="border-r border-edge px-2 py-1 text-left font-bold">Version</th>
+          {platforms.map((platform) => (
+            <th class="px-2 py-1 text-left font-bold">{platform.short}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {versions.map((version) => (
+          <tr class="border-b border-edge last:border-b-0 hover:bg-hover">
+            <th
+              scope="row"
+              class="border-r border-edge px-2 py-1 text-left font-normal whitespace-nowrap"
+            >
+              <code>{version}</code>
+            </th>
+            {platforms.map((platform) => (
+              <td class="px-2 py-1 whitespace-nowrap">
+                {pkg.versions[version][platform.id] ? (
+                  <>
+                    <a
+                      class="link"
+                      href={packageHref(pkg.name, version, platform.id)}
+                      aria-label={`Use ${pkg.name} ${version} on ${platform.short}`}
+                    >
+                      Use version
+                    </a>
+                    {pkg.default[platform.id] === version && (
+                      <span class="ml-2 border border-accent bg-accent-soft px-1 text-accent">
+                        Default
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span class="opacity-40">Unavailable</span>
+                )}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</details>

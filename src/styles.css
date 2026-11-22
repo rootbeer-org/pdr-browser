@@ -34,7 +34,7 @@
   }
 
   body {
-    @apply bg-page text-ink flex min-h-dvh flex-col font-mono text-sm/snug antialiased overscroll-none;
+    @apply flex min-h-dvh flex-col overscroll-none bg-page font-mono text-sm/snug text-ink antialiased;
   }
 
   *:focus-visible {

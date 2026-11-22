@@ -1,53 +1,43 @@
-import type { IndexOutput, PackageKind } from "./types.ts";
+import type { IndexOutput } from "./types.ts";
 
-export type UsageMode = "run" | "use" | "config";
-export type DetailMode = UsageMode | "bootstrap";
+export type UsageMode = "bootstrap" | "use" | "run" | "config";
+
+export interface RunTarget {
+  name: string;
+  isApp: boolean;
+}
 
 export interface SnippetRequest {
-  mode: DetailMode;
+  mode: UsageMode;
   version: string;
   isPinned: boolean;
-  bin: string;
-  app: string;
+  target?: RunTarget;
 }
 
 const BOOTSTRAP_SNIPPET =
   'sh -c "$(curl -fsSL https://rbpkg.com/rb.sh)"\neval "$("/opt/rb/profiles/$(id -u)/user/bin/rb" env)"';
 
-export function packageKind(output: IndexOutput | undefined): PackageKind {
-  if (Object.keys(output?.apps ?? {}).length) return "app";
-  if (output?.bins.length) return "command";
-  return "library";
-}
-
-export function primaryCommand(name: string, output: IndexOutput): string {
-  return output.bins.includes(name) ? name : output.bins.length === 1 ? output.bins[0] : "";
-}
-
-export function usageModes(name: string, output: IndexOutput): [DetailMode, string][] {
+export function usageModes(name: string, output: IndexOutput): [UsageMode, string][] {
   const isRootbeer = name === "rootbeer";
-  return [
-    ...(isRootbeer ? ([["bootstrap", "Install Rootbeer"]] as [DetailMode, string][]) : []),
-    ["use", isRootbeer ? "Install with rb" : "Install"],
-    ...(output.bins.length || Object.keys(output.apps).length
-      ? ([["run", "Run once"]] as [DetailMode, string][])
-      : []),
-    ["config", "Lua config"],
-  ];
+  const modes: [UsageMode, string][] = [];
+  if (isRootbeer) modes.push(["bootstrap", "Install Rootbeer"]);
+  modes.push(["use", isRootbeer ? "Install with rb" : "Install"]);
+  if (output.bins.length || Object.keys(output.apps).length) modes.push(["run", "Run once"]);
+  modes.push(["config", "Lua config"]);
+  return modes;
 }
 
 export function usageSnippet(name: string, output: IndexOutput, request: SnippetRequest): string {
   if (request.mode === "bootstrap") return BOOTSTRAP_SNIPPET;
-  const target = request.isPinned ? `${name}@${request.version}` : name;
-  if (request.mode === "config") return `rb.package(${JSON.stringify(target)})`;
+  const spec = request.isPinned ? `${name}@${request.version}` : name;
+  if (request.mode === "config") return `rb.package(${JSON.stringify(spec)})`;
 
+  const { target } = request;
   let option = "";
-  if (request.mode === "run") {
-    if (request.app) option = ` --app ${quote(request.app)}`;
-    else if (output.bins.length > 1 && request.bin !== name)
-      option = ` --bin ${quote(request.bin)}`;
-  }
-  return `rb ${request.mode} ${quote(target)}${option}`;
+  if (request.mode === "run" && target?.isApp) option = ` --app ${quote(target.name)}`;
+  else if (request.mode === "run" && target && output.bins.length > 1 && target.name !== name)
+    option = ` --bin ${quote(target.name)}`;
+  return `rb ${request.mode} ${quote(spec)}${option}`;
 }
 
 function quote(value: string): string {

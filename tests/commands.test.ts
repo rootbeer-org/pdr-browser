@@ -1,28 +1,34 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { usageModes, usageSnippet, type SnippetRequest } from "../src/catalog/commands.ts";
+import { usageModes, usageSnippet, type SnippetRequest } from "#/catalog/commands.ts";
 import { output } from "./catalog-fixture.ts";
 
 const request: SnippetRequest = {
   mode: "run",
   version: "1.2.3",
   isPinned: false,
-  bin: "tool",
-  app: "",
+  target: { name: "tool", isApp: false },
 };
 
 test("a sole command does not need --bin, while multiple commands use an explicit choice", () => {
   assert.equal(usageSnippet("example", output, request), "rb run example");
   const multiple = { ...output, bins: ["example", "tool"] };
   assert.equal(usageSnippet("example", multiple, request), "rb run example --bin tool");
-  assert.equal(usageSnippet("example", multiple, { ...request, bin: "example" }), "rb run example");
+  assert.equal(
+    usageSnippet("example", multiple, { ...request, target: { name: "example", isApp: false } }),
+    "rb run example",
+  );
 });
 
 test("apps can run with --app, including pinned versions and names with spaces", () => {
   const app = { ...output, bins: [], apps: { "Example App.app": "Example App.app" } };
   assert.ok(usageModes("example", app).some(([mode]) => mode === "run"));
   assert.equal(
-    usageSnippet("example", app, { ...request, isPinned: true, app: "Example App.app" }),
+    usageSnippet("example", app, {
+      ...request,
+      isPinned: true,
+      target: { name: "Example App.app", isApp: true },
+    }),
     "rb run example@1.2.3 --app 'Example App.app'",
   );
 });

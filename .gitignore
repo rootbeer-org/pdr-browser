@@ -9,7 +9,6 @@ lerna-debug.log*
 
 node_modules
 dist
-dist-ssr
 *.local
 
 # Editor directories and files
@@ -23,14 +22,7 @@ dist-ssr
 *.sln
 *.sw?
 
-.solid
 .pnpm-store
 
-.output
-.nitro
-
-public/_catalog
-public/catalog.json
-public/packages/*/data.json
-
-.wrangler
+# Astro
+.astro

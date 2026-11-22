@@ -1,20 +1,18 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { readSearch, searchHref, searchPage } from "../src/catalog/search-options.ts";
-import type { PackageSummary } from "../src/catalog/types.ts";
-import { output } from "./catalog-fixture.ts";
+import { readSearch, searchPage } from "#/catalog/search.ts";
+import type { PackageSummary } from "#/catalog/types.ts";
 
-const app = { ...output, bins: [], apps: { "Tool.app": "Tool.app" } };
-const library = { ...output, bins: [] };
+const output = { bins: ["tool"], apps: [] };
+const app = { bins: [], apps: ["Tool.app"] };
+const library = { bins: [], apps: [] };
 
 function summary(name: string, outputs: PackageSummary["outputs"], added = 0): PackageSummary {
   return {
     name,
     description: `${name} package`,
     homepage: "",
-    license: "",
     aliases: [],
-    maintainers: [],
     added,
     updated: added,
     default: Object.fromEntries(Object.keys(outputs).map((system) => [system, "1.0.0"])),
@@ -60,9 +58,22 @@ test("date sorts put the newest first", () => {
   assert.deepEqual(names("sort=added"), ["cli", "hybrid", "mac-app", "lib"]);
 });
 
-test("search matches app bundle names and keeps filters in links", () => {
+test("search matches app bundle names and ignores unknown filters", () => {
   assert.deepEqual(names("q=tool.app"), ["hybrid", "mac-app"]);
-  const options = readSearch(new URLSearchParams("kind=app&platform=all&sort=updated&bogus=1"));
-  assert.equal(searchHref(options, 2), "/?platform=all&kind=app&sort=updated&page=2");
-  assert.equal(readSearch(new URLSearchParams("kind=nope&platform=nope")).kind, "");
+  assert.deepEqual(readSearch(new URLSearchParams("kind=nope&platform=nope&sort=nope")), {
+    query: "",
+    platform: "",
+    kind: "",
+    sort: "name",
+  });
+});
+
+test("results are capped at the requested limit", () => {
+  const options = readSearch(new URLSearchParams());
+  const result = searchPage(packages, options, 2);
+  assert.deepEqual(
+    result.packages.map(({ name }) => name),
+    ["cli", "hybrid"],
+  );
+  assert.equal(result.count, 4);
 });

@@ -1,11 +1,12 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "unicorn", "oxc"],
+  "plugins": ["typescript", "unicorn", "oxc", "import"],
   "categories": {
     "correctness": "error"
   },
   "rules": {},
   "env": {
     "builtin": true
-  }
+  },
+  "ignorePatterns": [".astro", ".cache", "dist"]
 }

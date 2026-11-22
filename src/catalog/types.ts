@@ -20,8 +20,11 @@ export interface IndexEntry {
   versions: Record<string, Record<string, IndexOutput>>;
 }
 
-export interface PackageSummary extends Omit<IndexEntry, "versions"> {
-  outputs: Record<string, IndexOutput>;
+export interface PackageSummary extends Pick<
+  IndexEntry,
+  "name" | "description" | "homepage" | "aliases" | "added" | "updated" | "default"
+> {
+  outputs: Record<string, { bins: string[]; apps: string[] }>;
 }
 
 export interface IndexMetadata {
@@ -37,20 +40,8 @@ export interface PackageSnapshot extends IndexMetadata {
   pkg: IndexEntry;
 }
 
-export interface CatalogManifest {
-  format: 1;
-  dataPath: string;
-  names: string[];
-}
-
-export interface Platform {
-  id: string;
-  label: string;
-  short: string;
-}
-
-export const platforms: Platform[] = [
-  { id: "aarch64-macos", label: "macOS · Apple Silicon", short: "macOS ARM64" },
-  { id: "aarch64-linux", label: "Linux · ARM64", short: "Linux ARM64" },
-  { id: "x86_64-linux", label: "Linux · x86-64", short: "Linux x86-64" },
+export const platforms = [
+  { id: "aarch64-macos", short: "macOS ARM64" },
+  { id: "aarch64-linux", short: "Linux ARM64" },
+  { id: "x86_64-linux", short: "Linux x86-64" },
 ];
